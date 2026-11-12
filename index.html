@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一票通办 · 修复版演示</title>
+<style>
+  :root{ color-scheme: light; --blue:#2563eb; --ink:#1f2937; --mut:#6b7280; --line:#e5e7eb; --bg:#f6f7f9; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.6; }
+  .app{ display:flex; min-height:100vh; }
+  .side{ width:208px; background:#fff; border-right:1px solid var(--line); padding:16px 10px; position:sticky; top:0; height:100vh; flex:none; }
+  .brand{ font-weight:800; font-size:17px; padding:2px 8px 2px; }
+  .brand small{ display:block; font-weight:400; color:var(--mut); font-size:11px; letter-spacing:.08em; }
+  .nav{ margin-top:14px; display:flex; flex-direction:column; gap:2px; }
+  .nav button{ text-align:left; border:0; background:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:14px; color:var(--ink); display:flex; justify-content:space-between; align-items:center; }
+  .nav button:hover{ background:#f1f5f9; }
+  .nav button.on{ background:#eff6ff; color:var(--blue); font-weight:600; }
+  .badge{ background:var(--bad); color:#fff; border-radius:9px; font-size:11px; padding:0 6px; min-width:18px; text-align:center; }
+  .main{ flex:1; padding:18px 22px 60px; max-width:1060px; margin:0 auto; width:100%; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  h1{ font-size:20px; margin:0; }
+  .tagline{ color:var(--mut); font-size:13px; }
+  .btn{ border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:13.5px; }
+  .btn:hover{ border-color:#cbd5e1; }
+  .btn.pri{ background:var(--blue); border-color:var(--blue); color:#fff; font-weight:600; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .btn.sm{ padding:4px 10px; font-size:12.5px; }
+  .cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .card .k{ color:var(--mut); font-size:12px; }
+  .card .v{ font-size:16px; font-weight:700; margin-top:2px; }
+  .card .s{ color:var(--mut); font-size:12px; }
+  .panel{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:12px 0; }
+  .panel h3{ margin:0 0 8px; font-size:15px; }
+  .stages{ display:flex; gap:6px; margin:10px 0 2px; }
+  .stage{ flex:1; text-align:center; padding:8px 4px; border-radius:8px; background:#f1f5f9; color:var(--mut); font-size:13px; }
+  .stage.done{ background:#dcfce7; color:#166534; }
+  .stage.now{ background:#dbeafe; color:#1d4ed8; font-weight:700; }
+  table{ border-collapse:collapse; width:100%; font-size:13.5px; margin:6px 0; }
+  th,td{ border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  th{ background:#f8fafc; }
+  .pill{ border-radius:9px; padding:0 8px; font-size:12px; display:inline-block; }
+  .p-wait{ background:#fef3c7; color:#92400e; }
+  .p-ok{ background:#dcfce7; color:#166534; }
+  .p-bad{ background:#fee2e2; color:#991b1b; }
+  .p-info{ background:#dbeafe; color:#1d4ed8; }
+  .p-mut{ background:#f1f5f9; color:#475569; }
+  .roles{ display:flex; gap:6px; flex-wrap:wrap; }
+  .roles button{ border:1px solid var(--line); background:#fff; border-radius:16px; padding:5px 13px; cursor:pointer; font-size:13px; }
+  .roles button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  input,select,textarea{ border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13.5px; width:100%; font-family:inherit; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  label{ font-size:12.5px; color:var(--mut); display:block; margin-bottom:3px; }
+  .todo{ display:flex; gap:10px; align-items:flex-start; padding:9px 10px; border:1px solid var(--line); border-radius:8px; margin:6px 0; background:#fff; }
+  .todo .dot{ width:20px; height:20px; border-radius:50%; border:2px solid #cbd5e1; flex:none; margin-top:1px; cursor:pointer; text-align:center; line-height:16px; font-size:12px; color:#fff; background:#fff; }
+  .todo.done .dot{ background:var(--ok); border-color:var(--ok); }
+  .todo.done .tt{ color:var(--mut); text-decoration:line-through; }
+  .todo.lock{ background:#f8fafc; }
+  .todo.lock .dot{ cursor:not-allowed; background:#e2e8f0; border-color:#e2e8f0; }
+  .msg{ border-bottom:1px solid var(--line); padding:7px 2px; }
+  .msg .who{ font-weight:600; font-size:13px; }
+  .msg .when{ color:var(--mut); font-size:12px; margin-left:6px; }
+  .modal-bg{ position:fixed; inset:0; background:rgba(15,23,42,.45); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal{ background:#fff; border-radius:12px; padding:20px; width:min(480px,92vw); max-height:88vh; overflow:auto; }
+  .modal h3{ margin:0 0 10px; }
+  .toast{ position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:9px 18px; border-radius:8px; font-size:13.5px; z-index:99; box-shadow:0 6px 20px rgba(0,0,0,.25); }
+  .mut{ color:var(--mut); } .small{ font-size:12.5px; }
+  .ok-t{ color:var(--ok); font-weight:600; } .bad-t{ color:var(--bad); font-weight:600; } .warn-t{ color:var(--warn); font-weight:600; }
+  @media (max-width:820px){ .side{ display:none; } .cards{ grid-template-columns:1fr 1fr; } .grid2,.grid3{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">一票通办<small>ONE SHIPMENT. ONE SPACE.</small></div>
+    <div class="nav" id="nav"></div>
+    <p class="small mut" style="padding:8px 10px;">修复版演示 · 数据保存在本机浏览器，切换角色不重置。<br>当前为模拟数据 · 不代表真实运输状态。</p>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>货物资料工作台</h1>
+        <div class="tagline">围绕一票货物，让资料、进度与每一位参与者对齐。</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="openInvite()">邀请成员</button>
+        <button class="btn" onclick="openJoin()">邀请码加入</button>
+        <button class="btn pri" onclick="openNew()">＋ 新建货单</button>
+      </div>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="panel" style="padding:10px 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div><b>当前角色：</b><span id="roleName"></span> <span class="mut small">（切换角色只换视角，本票数据保留）</span></div>
+        <div class="roles" id="roles"></div>
+      </div>
+      <div class="stages" id="stages"></div>
+      <div class="small mut" id="stageHint"></div>
+    </div>
+    <div id="page"></div>
+  </main>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+const ROLES = ['卖家','货代','船公司','地方物流','买家'];
+const MEMBERS = { '卖家':'森屿家居','货代':'远航国际物流','船公司':'Ocean Link','地方物流':'港联运输','买家':'Nord Living' };
+const PERMS = { '卖家':'上传、更新、确认','货代':'查看、复核、提交','船公司':'查看、回填承运反馈','地方物流':'查看、回填提货安排','买家':'查看、留言、确认' };
+let seq = 100;
+function nowT(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+let S;
+function freshState(){
+  return {
+    page:'总览', role:'卖家',
+    order:{ id:'YP-20261112-101', title:'桌椅出口 · 安特卫普-上海', from:'安特卫普 · Antwerp', to:'上海 · Shanghai', cargo:'桌椅 / Tables and chairs', qty:'100 套', date:'2026-11-20', mode:'海运出口' },
+    ver: 2, verStatus:'待确认', confirmedVer: 1,
+    archive:[
+      { v:1, act:'卖家上传货物资料', by:'卖家', when:'11/12 09:40', note:'首版资料', status:'待确认' },
+      { v:2, act:'卖家更新货物资料', by:'卖家', when:'11/12 09:52', note:'收货人地址更新（装运指示已改，提单草稿未同步）', status:'待确认' }
+    ],
+    files:[
+      { name:'装运指示_SI.pdf', by:'卖家上传', ver:2 },
+      { name:'提单草稿_BL-Draft.pdf', by:'货代上传', ver:1 },
+      { name:'装箱单_Packing-List.xlsx', by:'卖家上传', ver:2 }
+    ],
+    todos:[
+      { id:1, role:'卖家', title:'确认货物资料 V2', status:'待处理', kind:'confirm' },
+      { id:2, role:'货代', title:'复核运输指示并完成提交', status:'待处理', kind:'review' },
+      { id:3, role:'船公司', title:'提供承运反馈：订舱确认与单证办理状态', status:'待处理', kind:'carrier' },
+      { id:4, role:'地方物流', title:'确认提货时间并同步交接信息', status:'待处理', kind:'local' },
+      { id:5, role:'买家', title:'确认收货资料与交付要求', status:'待处理', kind:'buyer' }
+    ],
+    fb:{ carrier:null, local:null, buyer:null },
+    msgs:[
+      { who:'卖家', name:'林经理', when:'11/12 09:52', text:'收货人地址已按海外客户最新通知更新到 V2 装运指示，请以第二版资料为准。' },
+      { who:'货代', name:'周操作', when:'11/12 10:05', text:'收到。请先确认当前版本，确认后我们继续复核运输指示。' }
+    ],
+    log:[
+      { when:'11/12 09:40', text:'卖家上传货物资料，生成 V1' },
+      { when:'11/12 09:52', text:'卖家更新货物资料，生成 V2（收货人地址变更）' },
+      { when:'11/12 09:52', text:'系统向卖家生成待办：确认货物资料 V2' }
+    ],
+    precheck:null,
+    service:null,
+    codes:[]
+  };
+}
+S = freshState();
+
+function save(){ try{ localStorage.setItem('yipiao-fixed', JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const raw=localStorage.getItem('yipiao-fixed'); if(raw){ S=JSON.parse(raw); } }catch(e){} }
+function log(text){ S.log.unshift({ when: nowT(), text }); }
+function toast(t){ const r=document.getElementById('toastRoot'); r.innerHTML='<div class="toast">'+t+'</div>'; setTimeout(()=>{ r.innerHTML=''; },2600); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function todoByKind(k){ return S.todos.find(t=>t.kind===k); }
+function isLocked(t){
+  if(t.kind==='review' && !(S.verStatus==='已确认' && S.confirmedVer===S.ver)) return '等待卖家确认当前版本 V'+S.ver+' 后可复核';
+  return null;
+}
+function stageIdx(){
+  const reviewDone = todoByKind('review').status==='已完成';
+  const confirmed = S.verStatus==='已确认' && S.confirmedVer===S.ver;
+  if(S.fb.local && S.fb.buyer && S.fb.carrier) return 4;
+  if(S.fb.carrier) return 3;
+  if(confirmed && reviewDone) return 3;
+  return 2;
+}
+function stageState(i){ const cur=stageIdx(); if(i===4 && S.fb.local && S.fb.buyer && S.fb.carrier) return 'done'; if(i<cur) return 'done'; if(i===cur) return 'now'; return ''; }
+function pendingCount(role){ return S.todos.filter(t=>t.status!=='已完成' && (!role || t.role===role)).length; }
+
+/* ---------- rendering shell ---------- */
+const PAGES = ['业务总览','资料与版本','单证预检','协同待办','服务购买','沟通记录','协同成员','操作记录'];
+function render(){
+  document.getElementById('nav').innerHTML = PAGES.map(p=>{
+    let extra='';
+    if(p==='协同待办' && pendingCount()) extra=' <span class="badge">'+pendingCount()+'</span>';
+    if(p==='沟通记录') extra=' <span class="mut small">'+S.msgs.length+'</span>';
+    return '<button class="'+(S.page===p?'on':'')+'" onclick="go(\''+p+'\')">'+p+extra+'</button>';
+  }).join('');
+  document.getElementById('roleName').textContent = S.role+'（'+MEMBERS[S.role]+'）';
+  document.getElementById('roles').innerHTML = ROLES.map(r=>'<button class="'+(S.role===r?'on':'')+'" onclick="setRole(\''+r+'\')">'+r+'</button>').join('');
+  const myPending = pendingCount(S.role);
+  document.getElementById('cards').innerHTML =
+    '<div class="card"><div class="k">当前货单</div><div class="v">'+esc(S.order.id.slice(-3))+' 票 · 协同进行中</div><div class="s">'+esc(S.order.title)+'</div></div>'
+    + '<div class="card"><div class="k">我的待办（'+S.role+'）</div><div class="v">'+myPending+' 项</div><div class="s">'+(myPending?'请在本页或协同待办中处理':'本角色暂无待办')+'</div></div>'
+    + '<div class="card"><div class="k">协同角色</div><div class="v">5 方</div><div class="s">邀请码连接本票参与者</div></div>'
+    + '<div class="card"><div class="k">资料版本</div><div class="v">V'+S.ver+' '+S.verStatus+'</div><div class="s">'+(S.verStatus==='已确认'?'卖家已确认当前货物资料':'等待卖家确认')+'</div></div>';
+  const names=['建立货单','资料协同','运输反馈','交付确认'];
+  document.getElementById('stages').innerHTML = names.map((n,i)=>{
+    const st=stageState(i+1);
+    const mark = st==='done'?'✓ ':((i+1)+'. ');
+    return '<div class="stage '+st+'">'+mark+n+'</div>';
+  }).join('');
+  const hints={ 2:'当前显示协同阶段：版本确认与货代复核完成后，自动进入运输反馈。', 3:'运输反馈阶段：船公司回填承运反馈后，自动进入交付确认。', 4:'交付确认阶段：地方物流与买家信息齐备后，本票协同完成。实际运输进度以承运方反馈为准。' };
+  document.getElementById('stageHint').textContent = hints[stageIdx()] || '';
+  const el=document.getElementById('page');
+  if(S.page==='业务总览') el.innerHTML = pageOverview();
+  else if(S.page==='资料与版本') el.innerHTML = pageFiles();
+  else if(S.page==='单证预检') el.innerHTML = pagePrecheck();
+  else if(S.page==='协同待办') el.innerHTML = pageTodos();
+  else if(S.page==='服务购买') el.innerHTML = pageService();
+  else if(S.page==='沟通记录') el.innerHTML = pageMsgs();
+  else if(S.page==='协同成员') el.innerHTML = pageMembers();
+  else if(S.page==='操作记录') el.innerHTML = pageLog();
+  save();
+}
+function go(p){ S.page=p; render(); }
+function setRole(r){ S.role=r; log('切换查看角色：'+r+'（数据保留）'); render(); toast('已切换到'+r+'视角，本票数据保留'); }
+
+/* ---------- shared bits ---------- */
+function todoHTML(t){
+  const lock = isLocked(t);
+  const done = t.status==='已完成';
+  return '<div class="todo'+(done?' done':'')+(lock?' lock':'')+'">'
+    + '<div class="dot" title="'+(lock?esc(lock):(done?'已完成':'点击完成'))+'" onclick="clickTodo('+t.id+')">'+(done?'✓':'')+'</div>'
+    + '<div style="flex:1;"><div class="tt"><b>'+esc(t.title)+'</b> <span class="pill '+(done?'p-ok':'p-wait')+'">'+(done?'已完成':'待处理')+'</span></div>'
+    + '<div class="small mut">'+t.role+'负责'+(lock?' · <span class="warn-t">已锁定：'+esc(lock)+'</span>':'')+(t.auto?' · 由预检生成':'')+'</div></div></div>';
+}
+function fbForm(kind, title, fields, data){
+  const mine = (kind==='carrier'&&S.role==='船公司')||(kind==='local'&&S.role==='地方物流')||(kind==='buyer'&&S.role==='买家');
+  let h='<div class="panel"><h3>'+title+'</h3>';
+  if(data){ h += fields.map(f=>'<div style="display:flex; gap:8px; padding:3px 0;"><span class="mut" style="width:110px; flex:none;">'+f[1]+'</span><span>'+esc(data[f[0]]||'—')+'</span></div>').join('')
+      + '<div class="small ok-t" style="margin-top:6px;">已保存并同步至协同空间，对应待办已自动完成。</div>'; }
+  else if(mine){ h += '<div class="grid2">'+fields.map(f=>'<div><label>'+f[1]+'</label><input id="fb_'+kind+'_'+f[0]+'" placeholder="等待填写"></div>').join('')+'</div>'
+      + '<div style="margin-top:10px;"><button class="btn pri" onclick="saveFb(\''+kind+'\')">保存并同步至协同</button></div>'; }
+  else { h += '<div class="mut">等待填写（由'+({carrier:'船公司',local:'地方物流',buyer:'买家'})[kind]+'回填）</div>'; }
+  return h+'</div>';
+}
+function saveFb(kind){
+  const maps={ carrier:['bkg','vessel','doc','note'], local:['time','person','place','note'], buyer:['unit','addr','when','note'] };
+  const data={}; let empty=true;
+  maps[kind].forEach(k=>{ const v=document.getElementById('fb_'+kind+'_'+k).value.trim(); data[k]=v; if(v) empty=false; });
+  if(empty){ toast('请至少填写一项再保存'); return; }
+  S.fb[kind]=data;
+  const t=todoByKind(kind); if(t && t.status!=='已完成'){ t.status='已完成'; }
+  log(({carrier:'船公司',local:'地方物流',buyer:'买家'})[kind]+'保存了反馈并同步至协同，对应待办自动完成');
+  render(); toast('操作已保存，对应待办已自动完成');
+}
+
+/* ---------- pages ---------- */
+function pageOverview(){
+  const o=S.order;
+  let h='<div class="panel"><h3>运输概览</h3><table><tr><th style="width:16%">起运地</th><th style="width:16%">目的地</th><th style="width:24%">货物名称</th><th style="width:12%">货物数量</th><th style="width:16%">计划出运日期</th><th>货单编号</th></tr>'
+    + '<tr><td>'+esc(o.from)+'</td><td>'+esc(o.to)+'</td><td>'+esc(o.cargo)+'</td><td>'+esc(o.qty)+'</td><td>'+esc(o.date)+'</td><td>'+esc(o.id)+'</td></tr></table></div>';
+  h += '<div class="panel"><h3>我的待办 · '+S.role+'</h3>'
+    + (S.todos.filter(t=>t.role===S.role).map(todoHTML).join('') || '<div class="mut">暂无</div>') + '</div>';
+  h += '<div class="panel"><h3>货物资料与确认</h3>'
+    + '<div>当前版本 <b>V'+S.ver+'</b> · 确认状态：<span class="pill '+(S.verStatus==='已确认'?'p-ok':'p-wait')+'">'+S.verStatus+'</span></div>'
+    + '<table><tr><th>核对字段</th><th>当前值</th><th>状态</th></tr>'
+    + '<tr><td>货物名称</td><td>'+esc(o.cargo)+'</td><td>'+S.verStatus+'</td></tr>'
+    + '<tr><td>货物数量</td><td>'+esc(o.qty)+'</td><td>'+S.verStatus+'</td></tr>'
+    + '<tr><td>收货人地址</td><td>上海市浦东新区临港大道 88 号（V2 已更新）</td><td>'+(S.precheck&&S.precheck.fixedAddr?'<span class="ok-t">各文件已对齐</span>':'<span class="warn-t">提单草稿未同步，去单证预检查看</span>')+'</td></tr></table>'
+    + '<div style="display:flex; gap:8px; margin-top:8px;">'
+    + (S.role==='卖家' ? '<button class="btn" onclick="updateData()">更新资料</button><button class="btn pri" '+(S.verStatus==='已确认'?'disabled':'')+' onclick="openConfirm()">确认 V'+S.ver+' 资料准确</button>' : '<span class="small mut">资料更新与版本确认由卖家操作。</span>')
+    + '<button class="btn" onclick="go(\'单证预检\')">运行单证预检</button></div></div>';
+  h += fbForm('carrier','承运反馈（船公司）', [['bkg','订舱编号'],['vessel','船名航次'],['doc','单证办理状态'],['note','备注']], S.fb.carrier);
+  h += fbForm('local','提货与交接安排（地方物流）', [['time','提货时间'],['person','提货联系人'],['place','提货地点'],['note','交接说明']], S.fb.local);
+  h += fbForm('buyer','收货与交付要求（买家）', [['unit','收货单位'],['addr','收货地址'],['when','交付时间要求'],['note','备注']], S.fb.buyer);
+  h += '<div class="panel"><h3>协同参与方</h3><div class="grid3">'
+    + ROLES.map(r=>'<div class="card" style="margin:0;"><div class="k">'+r+'</div><div class="v" style="font-size:14px;">'+MEMBERS[r]+' · 演示</div><div class="s">权限：'+PERMS[r]+'</div></div>').join('') + '</div></div>';
+  h += '<div class="panel"><h3>本票沟通</h3>' + msgsHTML(2) + '<div style="display:flex; gap:8px; margin-top:8px;"><input id="quickMsg" placeholder="输入留言，五方可见"><button class="btn pri" onclick="sendMsg(\'quickMsg\')">发送留言</button></div></div>';
+  return h;
+}
+function pageFiles(){
+  let h='<div class="panel"><h3>当前版本与确认状态</h3><div>当前版本 <b>V'+S.ver+'</b> · <span class="pill '+(S.verStatus==='已确认'?'p-ok':'p-wait')+'">'+S.verStatus+'</span>'
+    + '<span class="mut small">　确认后，该版本将作为各方核对的唯一依据。资料变更后旧确认保留、不自动覆盖新版本。</span></div>'
+    + '<div style="display:flex; gap:8px; margin-top:10px;"><button class="btn" onclick="pickFile()">上传文件</button><input type="file" id="fileInput" style="display:none" onchange="onFile(this)">'
+    + (S.role==='卖家'?'<button class="btn" onclick="updateData()">更新资料</button><button class="btn pri" '+(S.verStatus==='已确认'?'disabled':'')+' onclick="openConfirm()">确认 V'+S.ver+'</button>':'')
+    + '</div></div>';
+  h += '<div class="panel"><h3>文件列表</h3>' + S.files.map(f=>'<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line);"><span>'+esc(f.name)+' <span class="pill p-info">V'+f.ver+'</span></span><span><button class="btn sm" onclick="dlFile(\''+esc(f.name)+'\')">下载</button></span></div>').join('') + '</div>';
+  h += '<div class="panel"><h3>版本存档</h3>' + S.archive.slice().reverse().map(a=>'<div style="padding:6px 0; border-bottom:1px solid var(--line);"><b>V'+a.v+'</b> · '+esc(a.act)+' · '+a.when+' · <span class="pill '+(a.status==='已确认'?'p-ok':'p-wait')+'">'+a.status+'</span><div class="small mut">'+esc(a.note)+'</div></div>').join('') + '</div>';
+  return h;
+}
+function pickFile(){ document.getElementById('fileInput').click(); }
+function onFile(inp){
+  if(!inp.files || !inp.files[0]) return;
+  const name=inp.files[0].name;
+  S.ver += 1; S.verStatus='待确认';
+  S.files.push({ name:name, by:S.role+'上传', ver:S.ver });
+  S.archive.push({ v:S.ver, act:S.role+'上传文件 '+name, by:S.role, when:nowT(), note:'新文件生成新版本，等待卖家确认', status:'待确认' });
+  ensureConfirmTodo();
+  log(S.role+'上传文件「'+name+'」，生成 V'+S.ver+' 待确认');
+  render(); toast('已上传并生成 V'+S.ver+'，等待卖家确认');
+}
+function dlFile(name){
+  const blob=new Blob(['一票通办演示文件：'+name+'\n货单 '+S.order.id+' · '+S.order.title],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name.replace(/\.(pdf|xlsx)$/,'')+'.txt'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- core actions: the fixed logic ---------- */
+function ensureConfirmTodo(){
+  let t=todoByKind('confirm');
+  if(!t){ t={ id:++seq, role:'卖家', kind:'confirm' }; S.todos.push(t); }
+  t.title='确认货物资料 V'+S.ver; t.status='待处理';
+}
+function openConfirm(){
+  openModal('<h3>确认货物资料 V'+S.ver+'</h3>'
+    + '<table><tr><td class="mut">货物名称</td><td>'+esc(S.order.cargo)+'</td></tr><tr><td class="mut">货物数量</td><td>'+esc(S.order.qty)+'</td></tr><tr><td class="mut">路线</td><td>'+esc(S.order.from)+' → '+esc(S.order.to)+'</td></tr></table>'
+    + '<p class="small mut">确认后，该版本将作为各方核对的唯一依据；对应的卖家待办将自动完成，货代复核随即解锁。</p>'
+    + '<div style="display:flex; gap:8px; justify-content:flex-end;"><button class="btn" onclick="closeModal()">取消</button><button class="btn pri" onclick="doConfirm()">确认 V'+S.ver+' 资料准确</button></div>');
+}
+function doConfirm(){
+  S.verStatus='已确认'; S.confirmedVer=S.ver;
+  const a=S.archive.filter(x=>x.v===S.ver).pop(); if(a) a.status='已确认';
+  const t=todoByKind('confirm'); if(t) t.status='已完成';
+  log('卖家确认货物资料 V'+S.ver+'，确认待办自动完成，货代复核已解锁');
+  closeModal(); render(); toast('已记录当前版本确认，待办自动完成');
+}
+function updateData(){
+  if(S.role!=='卖家'){ toast('只有卖家可以更新资料'); return; }
+  openModal('<h3>更新货物资料（生成新版本）</h3>'
+    + '<div><label>货物名称</label><input id="ud_cargo" value="'+esc(S.order.cargo)+'"></div>'
+    + '<div style="margin-top:8px;"><label>货物数量</label><input id="ud_qty" value="'+esc(S.order.qty)+'"></div>'
+    + '<p class="small mut">保存后生成 V'+(S.ver+1)+' 并回到待确认；旧版本确认保留在存档中，不自动覆盖新版本；卖家待办会刷新为“确认货物资料 V'+(S.ver+1)+'”。</p>'
+    + '<div style="display:flex; gap:8px; justify-content:flex-end;"><button class="btn" onclick="closeModal()">取消</button><button class="btn pri" onclick="doUpdate()">保存并生成新版本</button></div>');
+}
+function doUpdate(){
+  const cargo=document.getElementById('ud_cargo').value.trim(), qty=document.getElementById('ud_qty').value.trim();
+  if(!cargo||!qty){ toast('名称和数量不能为空'); return; }
+  const changes=[]; if(cargo!==S.order.cargo) changes.push('货物名称：'+S.order.cargo+' → '+cargo); if(qty!==S.order.qty) changes.push('货物数量：'+S.order.qty+' → '+qty);
+  S.order.cargo=cargo; S.order.qty=qty; S.ver+=1; S.verStatus='待确认';
+  S.archive.push({ v:S.ver, act:'卖家更新货物资料', by:'卖家', when:nowT(), note:changes.length?changes.join('；'):'字段无变化', status:'待确认' });
+  ensureConfirmTodo();
+  log('卖家更新货物资料生成 V'+S.ver+'（'+(changes.join('；')||'无字段变化')+'），等待重新确认');
+  closeModal(); render(); toast('资料已更新为 V'+S.ver+'，已发起重新确认');
+}
+function clickTodo(id){
+  const t=S.todos.find(x=>x.id===id); if(!t) return;
+  if(t.role!==S.role){ toast('这是'+t.role+'的待办，当前以「'+S.role+'」身份只能查看，不能代办'); return; }
+  const lock=isLocked(t);
+  if(lock && t.status!=='已完成'){ toast('已锁定：'+lock); return; }
+  if(t.kind==='confirm' && t.status!=='已完成'){ openConfirm(); return; }
+  if((t.kind==='carrier'||t.kind==='local'||t.kind==='buyer') && t.status!=='已完成'){ toast('请在本票总览的对应区域填写并保存，待办会自动完成'); go('业务总览'); return; }
+  t.status = t.status==='已完成' ? '待处理' : '已完成';
+  log(S.role+(t.status==='已完成'?'完成了':'重开')+'待办「'+t.title+'」');
+  render();
+}
+
+/* ---------- precheck ---------- */
+function runPrecheck(){
+  const rows=[
+    { item:'收货人地址', a:'装运指示（V2）：上海市浦东新区临港大道 88 号', b:'提单草稿（V1）：上海市浦东新区临港大道 8 号', res: S.precheck&&S.precheck.fixedAddr ? '通过' : '不一致', key:'addr' },
+    { item:'付款人信息', a:'装运指示：上海测试买家有限公司', b:'提单草稿：未填写', res: S.precheck&&S.precheck.fixedPayer ? '通过' : '缺项', key:'payer' },
+    { item:'货物名称', a:'装运指示：桌椅 / Tables and chairs', b:'装箱单：桌椅 / Tables and chairs', res:'通过', key:'name' },
+    { item:'货物件数', a:'装箱单：100 套', b:'订舱资料：100 套', res:'通过', key:'qty' },
+    { item:'计划出运日期', a:'订舱资料：2026-11-20', b:'装运指示：2026-11-20', res:'通过', key:'date' }
+  ];
+  S.precheck = { rows: rows, when: nowT(), fixedAddr: !!(S.precheck&&S.precheck.fixedAddr), fixedPayer: !!(S.precheck&&S.precheck.fixedPayer), ignored: (S.precheck&&S.precheck.ignored)||{} };
+  log(S.role+'运行单证预检：'+rows.filter(r=>r.res!=='通过').length+' 项问题');
+  render();
+}
+function pagePrecheck(){
+  let h='<div class="panel"><h3>单证预检</h3><p class="small mut">按约定模板检查必填项、字段差异及版本一致性，显示原文依据；结果供人工复核，不保证所有资料合规无误。演示规则：收货人地址跨文件比对、付款人必填、名称/件数/日期一致性。</p>'
+    + '<button class="btn pri" onclick="runPrecheck()">运行预检（对当前版本 V'+S.ver+'）</button></div>';
+  if(S.precheck){
+    const pc=S.precheck;
+    h += '<div class="panel"><h3>差异清单 · '+pc.when+'</h3><table><tr><th style="width:14%">检查项</th><th style="width:30%">资料 A</th><th style="width:30%">资料 B</th><th style="width:10%">结果</th><th>处理</th></tr>'
+      + pc.rows.map(r=>{
+          const pill = r.res==='通过'?'p-ok':(r.res==='缺项'?'p-bad':'p-wait');
+          let act='—';
+          if(r.res!=='通过'){
+            if(pc.ignored[r.key]) act='<span class="mut">已忽略（已注明原因）</span>';
+            else act='<button class="btn sm" onclick="diffToTodo(\''+r.key+'\')">发起待办</button> <button class="btn sm" onclick="ignoreDiff(\''+r.key+'\')">忽略</button>';
+          }
+          return '<tr><td>'+r.item+'</td><td>'+r.a+'</td><td>'+r.b+'</td><td><span class="pill '+pill+'">'+r.res+'</span></td><td>'+act+'</td></tr>';
+        }).join('') + '</table>'
+      + '<p class="small mut">为什么值钱：若按提单草稿的旧地址出单，事后修改提单涉及申请、条件性保函与费用确认（见达飞中国用户指南）；预检在提交前拦住这一项。</p></div>';
+  }
+  return h;
+}
+function diffToTodo(key){
+  const names={ addr:'确认收货人地址以装运指示 V2 为准，并同步提单草稿', payer:'补齐提单草稿的付款人信息' };
+  if(!S.todos.some(t=>t.title===names[key])) S.todos.push({ id:++seq, role:'卖家', title:names[key], status:'待处理', kind:'fix', auto:true });
+  log('预检差异已生成待办：'+names[key]); render(); toast('已生成待办，派给卖家确认处理');
+}
+function ignoreDiff(key){ S.precheck.ignored[key]=true; log(S.role+'忽略预检差异：'+key+'（已留痕）'); render(); }
+function fixAddrDemo(){ /* not used in UI; alignment happens via todo completion note */ }
+
+/* ---------- todos / service / msgs / members / log ---------- */
+function pageTodos(){
+  return '<div class="panel"><h3>五方协同待办</h3><p class="small mut">当前以「'+S.role+'」身份处理事项；其他角色的任务可查看，不可代办。确认与保存反馈会自动完成对应待办；前置未完成时，后置待办锁定并注明原因。</p>'
+    + ROLES.map(r=>'<h4 style="margin:12px 0 4px;">'+r+'</h4>'+S.todos.filter(t=>t.role===r).map(todoHTML).join('')).join('')
+    + '<p class="small">进度：'+S.todos.filter(t=>t.status==='已完成').length+'/'+S.todos.length+' 已完成</p></div>';
+}
+function pageService(){
+  const bought = !!S.service;
+  let h='<div class="panel"><h3>服务购买</h3><p class="small mut">按票购买人工预检与跟进服务；船期、海关审批等机构处理时间不在服务承诺内。价格为试点测试价，不是正式报价。</p><div class="grid3">'
+    + '<div class="card"><div class="k">基础协同</div><div class="v">随付费服务提供</div><p class="small">一票档案、协同待办与状态入口、版本记录。</p></div>'
+    + '<div class="card" style="border-color:var(--blue);"><div class="k">基础服务包 · 按票</div><div class="v">¥200 / 票</div><p class="small">一次单证预检 + 一次修改后复核 + 最多 3 次主动跟进，跟进期 5 个工作日。资料不齐时明确告知缺项并暂停计时。</p>'
+    + (bought?'<span class="pill p-ok">已购买 · 本票生效中</span>':'<button class="btn pri" onclick="buyService()">购买本票服务</button>')+'</div>'
+    + '<div class="card"><div class="k">复杂事项</div><div class="v">单独报价</div><p class="small">明确范围、时限与费用上限后报价，客户确认后再办理。</p></div></div></div>';
+  if(bought){
+    h += '<div class="panel"><h3>本票服务状态</h3><table><tr><th>服务包</th><th>预检</th><th>修改后复核</th><th>主动跟进</th><th>跟进期</th><th>状态</th></tr>'
+      + '<tr><td>基础服务包（¥200）</td><td>'+(S.precheck?'已使用 1/1':'未使用')+'</td><td>未使用</td><td>'+S.service.follow+' / 3 次</td><td>5 个工作日</td><td><span class="pill p-ok">生效中</span></td></tr></table>'
+      + '<button class="btn" onclick="followOnce()">记录一次主动跟进</button> <span class="small mut">由服务方跟进责任方并记录结果，计入服务次数。</span></div>';
+  }
+  return h;
+}
+function buyService(){ S.service={ pkg:'基础服务包', follow:0 }; log(S.role+'购买基础服务包（¥200/票，试点测试价），服务在本票生效'); render(); toast('服务已生效（演示下单，未产生真实支付）'); }
+function followOnce(){ if(S.service.follow>=3){ toast('已达基础包跟进次数上限，超出部分需单独报价'); return; } S.service.follow++; log('服务方完成一次主动跟进（'+S.service.follow+'/3）'); render(); }
+function msgsHTML(limit){
+  const list = limit? S.msgs.slice(-limit) : S.msgs;
+  return list.map(m=>'<div class="msg"><span class="who">'+m.who+' · '+esc(m.name||'')+'</span><span class="when">'+m.when+'</span><div>'+esc(m.text)+'</div></div>').join('');
+}
+function pageMsgs(){
+  return '<div class="panel"><h3>协同沟通 · '+S.msgs.length+' 条记录</h3>'+msgsHTML()
+    + '<div style="display:flex; gap:8px; margin-top:10px;"><input id="fullMsg" placeholder="输入留言，五方可见"><button class="btn pri" onclick="sendMsg(\'fullMsg\')">发送留言</button></div></div>';
+}
+function sendMsg(id){
+  const inp=document.getElementById(id); const v=inp.value.trim(); if(!v) return;
+  S.msgs.push({ who:S.role, name:'演示', when:nowT(), text:v });
+  log(S.role+'发送了协同消息'); render(); toast('留言已发送');
+}
+function pageMembers(){
+  return '<div class="panel"><h3>协同成员与权限</h3><div class="grid3">'
+    + ROLES.map(r=>'<div class="card" style="margin:0;"><div class="k">'+r+(S.role===r?'（当前视角）':'')+'</div><div class="v" style="font-size:14px;">'+MEMBERS[r]+' · 演示</div><div class="s">权限：'+PERMS[r]+'</div></div>').join('')
+    + '</div><div style="margin-top:10px;"><button class="btn" onclick="openInvite()">邀请成员</button></div>'
+    + '<p class="small mut">客户名单、报价和内部备注不默认对协作方开放；各方按角色最小权限访问本票资料。</p></div>';
+}
+function pageLog(){
+  return '<div class="panel"><h3>操作记录 · '+S.log.length+' 条</h3><button class="btn" onclick="exportLog()">导出操作记录</button>'
+    + S.log.map(l=>'<div style="padding:6px 0; border-bottom:1px solid var(--line);"><span class="mut small">'+l.when+'</span>　'+esc(l.text)+'</div>').join('') + '</div>';
+}
+function exportLog(){
+  const txt='一票通办操作记录 · 货单 '+S.order.id+'（'+S.order.title+'）\n导出时间 '+nowT()+'\n\n'+S.log.slice().reverse().map(l=>l.when+'  '+l.text).join('\n');
+  const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='操作记录-'+S.order.id+'.txt'; a.click(); URL.revokeObjectURL(a.href);
+  toast('操作记录已导出为文件');
+}
+
+/* ---------- modals ---------- */
+function openModal(html){ document.getElementById('modalRoot').innerHTML='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>'; }
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function openNew(){
+  openModal('<h3>新建一票货物</h3><p class="small mut">演示模式：本机直接创建，不需要登录；云端保存与跨设备协同才需要账号。表单内容与当前货单完全隔离，关闭不产生任何变化。</p>'
+    + '<div><label>货单名称</label><input id="nw_title" placeholder="如：桌椅出口 · 安特卫普-上海"></div>'
+    + '<div class="grid2" style="margin-top:8px;"><div><label>起运地</label><input id="nw_from" placeholder="安特卫普 · Antwerp"></div><div><label>目的地</label><input id="nw_to" placeholder="上海 · Shanghai"></div></div>'
+    + '<div class="grid2" style="margin-top:8px;"><div><label>货物名称</label><input id="nw_cargo" placeholder="桌椅 / Tables and chairs"></div><div><label>货物数量</label><input id="nw_qty" placeholder="100 套"></div></div>'
+    + '<div style="margin-top:8px;"><label>计划出运日期（可整段输入或粘贴）</label><input id="nw_date" placeholder="2026-11-20"></div>'
+    + '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;"><button class="btn" onclick="closeModal()">取消</button><button class="btn pri" onclick="doNew()">建立协同空间</button></div>');
+}
+function doNew(){
+  const g=id=>document.getElementById(id).value.trim();
+  const title=g('nw_title'), from=g('nw_from'), to=g('nw_to'), cargo=g('nw_cargo'), qty=g('nw_qty'), date=g('nw_date');
+  if(!title||!from||!to||!cargo||!qty||!date){ toast('表单未填完整：六项都是必填'); return; }
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast('日期格式不对，请用 2026-11-20 这样的格式'); return; }
+  const keepMsgs=S.msgs;
+  S=freshState();
+  S.order={ id:'YP-20261112-'+Math.floor(100+Math.random()*900), title:title, from:from, to:to, cargo:cargo, qty:qty, date:date, mode:'海运出口' };
+  S.msgs=keepMsgs.slice(0,0); S.msgs=[];
+  S.log=[{ when:nowT(), text:'卖家新建货单「'+title+'」，生成协同空间（演示模式本地创建）' }];
+  closeModal(); render(); toast('新货单已建立：'+S.order.id);
+}
+function genCode(role){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let body='';
+  for(let i=0;i<28;i++) body+=chars[Math.floor(Math.random()*chars.length)];
+  return 'YP'+role.length+body.slice(0,26);
+}
+function openInvite(){
+  openModal('<h3>邀请成员加入本票</h3><div><label>选择角色</label><select id="inv_role">'+ROLES.map(r=>'<option>'+r+'</option>').join('')+'</select></div>'
+    + '<div style="margin-top:10px;"><button class="btn pri" onclick="doGenCode()">生成邀请码</button></div>'
+    + '<div id="inv_out" style="margin-top:10px;"></div>'
+    + '<p class="small mut">邀请码共 30 位（含前缀），加入时按原样粘贴即可；演示码与加入框使用同一格式。</p>'
+    + '<div style="text-align:right;"><button class="btn" onclick="closeModal()">关闭</button></div>');
+}
+function doGenCode(){
+  const role=document.getElementById('inv_role').value;
+  const code=genCode(role); S.codes.push({ code:code, role:role });
+  log('已生成'+role+'邀请码'); save();
+  document.getElementById('inv_out').innerHTML='<div class="card" style="margin:0;"><div class="k">'+role+'邀请码（30 位）</div><div class="v" style="font-size:14px; word-break:break-all;">'+code+'</div></div>';
+}
+function openJoin(){
+  openModal('<h3>邀请码加入</h3><p class="small mut">通过邀请码加入他人的协同空间。加入后，你将以邀请码对应的角色参与该票业务。</p>'
+    + '<div><label>邀请码（30 位，粘贴完整的邀请码）</label><input id="join_code" placeholder="粘贴完整的 30 位邀请码"></div>'
+    + '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;"><button class="btn" onclick="closeModal()">取消</button><button class="btn pri" onclick="doJoin()">核验并加入</button></div>');
+}
+function doJoin(){
+  const v=document.getElementById('join_code').value.trim();
+  if(v.length!==30){ toast('格式不对：邀请码应为完整的 30 位，请核对后重试'); return; }
+  const hit=S.codes.find(c=>c.code===v);
+  if(!hit){ toast('未找到该邀请码对应的货单（演示数据仅在本机有效）'); return; }
+  S.role=hit.role; log('通过邀请码以「'+hit.role+'」身份加入本票'); closeModal(); render(); toast('已加入，并切换到'+hit.role+'视角');
+}
+function resetDemo(){
+  if(!confirm('重置演示数据？本票将回到初始状态（V2 待确认）。')) return;
+  try{ localStorage.removeItem('yipiao-fixed'); }catch(e){}
+  S=freshState(); closeModal(); render(); toast('演示数据已重置');
+}
+
+/* ---------- init ---------- */
+load();
+if(!S || !S.order) S=freshState();
+render();
+</script>
+<div style="max-width:1060px; margin:0 auto; padding:0 22px 30px;">
+  <button class="btn sm" onclick="resetDemo()">重置演示数据</button>
+  <span class="small mut">　修复版要点：切换角色不重置 · 确认自动完成待办 · 新版本刷新确认待办 · 货代复核有前置锁定 · 阶段自动推进 · 新建货单本地可建且表单隔离 · 预检差异清单 · 服务购买 · 上传/导出真实可用 · 邀请码格式统一为 30 位。</span>
+</div>
+</body>
+</html>
