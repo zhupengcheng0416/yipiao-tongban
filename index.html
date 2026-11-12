@@ -165,12 +165,12 @@ function isLocked(t){
 function stageIdx(){
   const reviewDone = todoByKind('review').status==='已完成';
   const confirmed = S.verStatus==='已确认' && S.confirmedVer===S.ver;
-  if(S.fb.local && S.fb.buyer && S.fb.carrier) return 4;
-  if(S.fb.carrier) return 3;
+  if(S.fb.carrier && S.fb.local && S.fb.buyer) return 5;
+  if(S.fb.carrier) return 4;
   if(confirmed && reviewDone) return 3;
   return 2;
 }
-function stageState(i){ const cur=stageIdx(); if(i===4 && S.fb.local && S.fb.buyer && S.fb.carrier) return 'done'; if(i<cur) return 'done'; if(i===cur) return 'now'; return ''; }
+function stageState(i){ const cur=stageIdx(); if(cur===5) return 'done'; if(i<cur) return 'done'; if(i===cur) return 'now'; return ''; }
 function pendingCount(role){ return S.todos.filter(t=>t.status!=='已完成' && (!role || t.role===role)).length; }
 
 /* ---------- rendering shell ---------- */
@@ -186,7 +186,7 @@ function render(){
   document.getElementById('roles').innerHTML = ROLES.map(r=>'<button class="'+(S.role===r?'on':'')+'" onclick="setRole(\''+r+'\')">'+r+'</button>').join('');
   const myPending = pendingCount(S.role);
   document.getElementById('cards').innerHTML =
-    '<div class="card"><div class="k">当前货单</div><div class="v">'+esc(S.order.id.slice(-3))+' 票 · 协同进行中</div><div class="s">'+esc(S.order.title)+'</div></div>'
+    '<div class="card"><div class="k">当前货单</div><div class="v">协同进行中</div><div class="s">'+esc(S.order.id)+' · '+esc(S.order.title)+'</div></div>'
     + '<div class="card"><div class="k">我的待办（'+S.role+'）</div><div class="v">'+myPending+' 项</div><div class="s">'+(myPending?'请在本页或协同待办中处理':'本角色暂无待办')+'</div></div>'
     + '<div class="card"><div class="k">协同角色</div><div class="v">5 方</div><div class="s">邀请码连接本票参与者</div></div>'
     + '<div class="card"><div class="k">资料版本</div><div class="v">V'+S.ver+' '+S.verStatus+'</div><div class="s">'+(S.verStatus==='已确认'?'卖家已确认当前货物资料':'等待卖家确认')+'</div></div>';
@@ -196,7 +196,7 @@ function render(){
     const mark = st==='done'?'✓ ':((i+1)+'. ');
     return '<div class="stage '+st+'">'+mark+n+'</div>';
   }).join('');
-  const hints={ 2:'当前显示协同阶段：版本确认与货代复核完成后，自动进入运输反馈。', 3:'运输反馈阶段：船公司回填承运反馈后，自动进入交付确认。', 4:'交付确认阶段：地方物流与买家信息齐备后，本票协同完成。实际运输进度以承运方反馈为准。' };
+  const hints={ 2:'当前显示协同阶段：版本确认与货代复核完成后，自动进入运输反馈。', 3:'运输反馈阶段：船公司回填承运反馈后，自动进入交付确认。', 4:'交付确认阶段：地方物流与买家信息齐备后，本票协同完成。实际运输进度以承运方反馈为准。', 5:'本票协同已完成：五方信息齐备，操作记录可导出留痕。' };
   document.getElementById('stageHint').textContent = hints[stageIdx()] || '';
   const el=document.getElementById('page');
   if(S.page==='业务总览') el.innerHTML = pageOverview();
@@ -346,13 +346,13 @@ function runPrecheck(){
   const rows=[
     { item:'收货人地址', a:'装运指示（V2）：上海市浦东新区临港大道 88 号', b:'提单草稿（V1）：上海市浦东新区临港大道 8 号', res: S.precheck&&S.precheck.fixedAddr ? '通过' : '不一致', key:'addr' },
     { item:'付款人信息', a:'装运指示：上海测试买家有限公司', b:'提单草稿：未填写', res: S.precheck&&S.precheck.fixedPayer ? '通过' : '缺项', key:'payer' },
-    { item:'货物名称', a:'装运指示：桌椅 / Tables and chairs', b:'装箱单：桌椅 / Tables and chairs', res:'通过', key:'name' },
-    { item:'货物件数', a:'装箱单：100 套', b:'订舱资料：100 套', res:'通过', key:'qty' },
-    { item:'计划出运日期', a:'订舱资料：2026-11-20', b:'装运指示：2026-11-20', res:'通过', key:'date' }
+    { item:'货物名称', a:'装运指示：'+S.order.cargo, b:'装箱单：'+S.order.cargo, res:'通过', key:'name' },
+    { item:'货物件数', a:'装箱单：'+S.order.qty, b:'订舱资料：'+S.order.qty, res:'通过', key:'qty' },
+    { item:'计划出运日期', a:'订舱资料：'+S.order.date, b:'装运指示：'+S.order.date, res:'通过', key:'date' }
   ];
   S.precheck = { rows: rows, when: nowT(), fixedAddr: !!(S.precheck&&S.precheck.fixedAddr), fixedPayer: !!(S.precheck&&S.precheck.fixedPayer), ignored: (S.precheck&&S.precheck.ignored)||{} };
   log(S.role+'运行单证预检：'+rows.filter(r=>r.res!=='通过').length+' 项问题');
-  render();
+  render(); toast('预检完成：'+rows.filter(r=>r.res!=='通过').length+' 项问题');
 }
 function pagePrecheck(){
   let h='<div class="panel"><h3>单证预检</h3><p class="small mut">按约定模板检查必填项、字段差异及版本一致性，显示原文依据；结果供人工复核，不保证所有资料合规无误。演示规则：收货人地址跨文件比对、付款人必填、名称/件数/日期一致性。</p>'
@@ -365,6 +365,7 @@ function pagePrecheck(){
           let act='—';
           if(r.res!=='通过'){
             if(pc.ignored[r.key]) act='<span class="mut">已忽略（已注明原因）</span>';
+            else if(S.todos.some(t=>t.auto && t.title.indexOf(r.item.slice(0,4))>=0)) act='<span class="mut">已生成待办</span>';
             else act='<button class="btn sm" onclick="diffToTodo(\''+r.key+'\')">发起待办</button> <button class="btn sm" onclick="ignoreDiff(\''+r.key+'\')">忽略</button>';
           }
           return '<tr><td>'+r.item+'</td><td>'+r.a+'</td><td>'+r.b+'</td><td><span class="pill '+pill+'">'+r.res+'</span></td><td>'+act+'</td></tr>';
@@ -378,7 +379,7 @@ function diffToTodo(key){
   if(!S.todos.some(t=>t.title===names[key])) S.todos.push({ id:++seq, role:'卖家', title:names[key], status:'待处理', kind:'fix', auto:true });
   log('预检差异已生成待办：'+names[key]); render(); toast('已生成待办，派给卖家确认处理');
 }
-function ignoreDiff(key){ S.precheck.ignored[key]=true; log(S.role+'忽略预检差异：'+key+'（已留痕）'); render(); }
+function ignoreDiff(key){ S.precheck.ignored[key]=true; log(S.role+'忽略预检差异：'+key+'（已留痕）'); render(); toast('已忽略该差异并留痕'); }
 function fixAddrDemo(){ /* not used in UI; alignment happens via todo completion note */ }
 
 /* ---------- todos / service / msgs / members / log ---------- */
@@ -402,7 +403,7 @@ function pageService(){
   return h;
 }
 function buyService(){ S.service={ pkg:'基础服务包', follow:0 }; log(S.role+'购买基础服务包（¥200/票，试点测试价），服务在本票生效'); render(); toast('服务已生效（演示下单，未产生真实支付）'); }
-function followOnce(){ if(S.service.follow>=3){ toast('已达基础包跟进次数上限，超出部分需单独报价'); return; } S.service.follow++; log('服务方完成一次主动跟进（'+S.service.follow+'/3）'); render(); }
+function followOnce(){ if(S.service.follow>=3){ toast('已达基础包跟进次数上限，超出部分需单独报价'); return; } S.service.follow++; log('服务方完成一次主动跟进（'+S.service.follow+'/3）'); render(); toast('已记录一次主动跟进（'+S.service.follow+'/3）'); }
 function msgsHTML(limit){
   const list = limit? S.msgs.slice(-limit) : S.msgs;
   return list.map(m=>'<div class="msg"><span class="who">'+m.who+' · '+esc(m.name||'')+'</span><span class="when">'+m.when+'</span><div>'+esc(m.text)+'</div></div>').join('');
@@ -486,9 +487,12 @@ function doJoin(){
   S.role=hit.role; log('通过邀请码以「'+hit.role+'」身份加入本票'); closeModal(); render(); toast('已加入，并切换到'+hit.role+'视角');
 }
 function resetDemo(){
-  if(!confirm('重置演示数据？本票将回到初始状态（V2 待确认）。')) return;
+  openModal('<h3>重置演示数据</h3><p class="small mut">本票将回到初始状态（默认演示单，V2 待确认），当前修改会清空。</p><div style="display:flex; gap:8px; justify-content:flex-end;"><button class="btn" onclick="closeModal()">取消</button><button class="btn pri" onclick="doReset()">确认重置</button></div>');
+}
+function doReset(){
   try{ localStorage.removeItem('yipiao-fixed'); }catch(e){}
-  S=freshState(); closeModal(); render(); toast('演示数据已重置');
+  S=freshState(); S.log.unshift({ when: nowT(), text:'演示数据已重置，回到初始状态' });
+  closeModal(); render(); toast('演示数据已重置');
 }
 
 /* ---------- init ---------- */
