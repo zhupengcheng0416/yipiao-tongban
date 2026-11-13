@@ -115,7 +115,7 @@ function nowT(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate()+' '
 let S;
 function freshState(){
   return {
-    page:'总览', role:'卖家',
+    page:'业务总览', role:'卖家',
     order:{ id:'YP-20261112-101', title:'桌椅出口 · 安特卫普-上海', from:'安特卫普 · Antwerp', to:'上海 · Shanghai', cargo:'桌椅 / Tables and chairs', qty:'100 套', date:'2026-11-20', mode:'海运出口' },
     ver: 2, verStatus:'待确认', confirmedVer: 1,
     archive:[
@@ -207,6 +207,7 @@ function render(){
   else if(S.page==='沟通记录') el.innerHTML = pageMsgs();
   else if(S.page==='协同成员') el.innerHTML = pageMembers();
   else if(S.page==='操作记录') el.innerHTML = pageLog();
+  else el.innerHTML = pageOverview();
   save();
 }
 function go(p){ S.page=p; render(); }
