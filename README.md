@@ -4,6 +4,8 @@
 
 在线演示：https://zhupengcheng0416.github.io/yipiao-tongban/
 
+英文版（供外籍评委，流程与中文版完全一致，两版右上角可互相切换）：https://zhupengcheng0416.github.io/yipiao-tongban/index-en.html
+
 ## 两个入口（角色切换保留，一人可演示双方）
 
 - **货代工作台**：建单、导入资料、运行预检、复核差异、发送确认请求、导出草稿、核对回件。

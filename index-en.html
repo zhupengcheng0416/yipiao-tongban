@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yipiao Tongban · Freight Document Collaboration (Demo)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f4f6f9; color: #1f2937; }
+  .app { display: flex; min-height: 100vh; }
+  .side { width: 216px; background: #fff; border-right: 1px solid #e5e7eb; padding: 20px 14px; flex-shrink: 0; }
+  .brand { font-size: 19px; font-weight: 700; padding: 2px 8px 14px; }
+  .brand small { display: block; font-size: 10px; color: #9ca3af; font-weight: 400; letter-spacing: .12em; margin-top: 3px; }
+  .nav button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 10px; border-radius: 8px; font-size: 14px; cursor: pointer; color: #374151; margin-bottom: 2px; }
+  .nav button.on { background: #eef4ff; color: #1d4ed8; font-weight: 600; }
+  .nav button:hover { background: #f3f4f6; }
+  .badge { float: right; background: #dc2626; color: #fff; font-size: 11px; border-radius: 9px; padding: 0 6px; line-height: 18px; }
+  .side .note { margin-top: 18px; font-size: 12px; color: #9ca3af; line-height: 1.7; padding: 0 8px; }
+  .main { flex: 1; padding: 22px 26px; max-width: 1060px; min-width: 0; }
+  h1 { font-size: 21px; margin-bottom: 4px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 13px 15px; }
+  .card .k { font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+  .card .v { font-size: 17px; font-weight: 700; }
+  .card .d { font-size: 12px; color: #9ca3af; margin-top: 3px; line-height: 1.5; }
+  .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 17px 19px; margin-bottom: 14px; }
+  .panel h3 { font-size: 15px; margin-bottom: 11px; }
+  .panel h3 .tag { font-size: 11px; font-weight: 400; color: #9ca3af; margin-left: 8px; }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 2px; }
+  .step { flex: 1; min-width: 92px; text-align: center; font-size: 12px; padding: 8px 4px; border-radius: 8px; background: #f3f4f6; color: #6b7280; }
+  .step.done { background: #dcfce7; color: #166534; }
+  .step.now { background: #2563eb; color: #fff; font-weight: 600; }
+  .blocker { border: 1px solid #fecaca; background: #fef2f2; border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; line-height: 1.6; }
+  .okbox { border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; line-height: 1.6; }
+  .warnbox { border: 1px solid #fde68a; background: #fffbeb; border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 9px; border-bottom: 1px solid #eef0f3; vertical-align: top; line-height: 1.55; }
+  th { color: #6b7280; font-weight: 600; background: #fafbfc; }
+  .tblwrap { overflow-x: auto; }
+  .pill { display: inline-block; font-size: 11px; border-radius: 8px; padding: 1px 8px; line-height: 19px; white-space: nowrap; }
+  .pill.bad { background: #fee2e2; color: #b91c1c; }
+  .pill.good { background: #dcfce7; color: #166534; }
+  .pill.na { background: #f3f4f6; color: #6b7280; }
+  .pill.unc { background: #fef3c7; color: #92400e; }
+  .pill.info { background: #dbeafe; color: #1e40af; }
+  .btn { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 15px; font-size: 13px; cursor: pointer; }
+  .btn:hover { background: #1d4ed8; }
+  .btn.ghost { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+  .btn.ghost:hover { background: #f9fafb; }
+  .btn:disabled { background: #d1d5db; cursor: not-allowed; }
+  .btn.sm { padding: 5px 11px; font-size: 12px; }
+  .roles { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .roles button { border: 1px solid #d1d5db; background: #fff; border-radius: 16px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  .roles button.on { background: #111827; color: #fff; border-color: #111827; }
+  input[type=text], input[type=number], input[type=date], select, textarea { border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit; background: #fff; }
+  input[type=text], input[type=number], select { width: 100%; }
+  .fld { margin-bottom: 10px; }
+  .fld label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .log { font-size: 12.5px; }
+  .log div { padding: 6px 2px; border-bottom: 1px dashed #eef0f3; line-height: 1.6; }
+  .log .t { color: #9ca3af; margin-right: 8px; white-space: nowrap; }
+  .muted { color: #6b7280; font-size: 12.5px; line-height: 1.7; }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #111827; color: #fff; padding: 11px 20px; border-radius: 10px; font-size: 14px; z-index: 99; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: 88vw; text-align: center; line-height: 1.5; }
+  .modalwrap { position: fixed; inset: 0; background: rgba(17,24,39,.45); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #fff; border-radius: 14px; padding: 22px; width: 430px; max-width: 94vw; max-height: 88vh; overflow-y: auto; }
+  .modal h3 { font-size: 16px; margin-bottom: 14px; }
+  .headbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .doc { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .doc .dn { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  .citem { border: 1px solid #fde68a; background: #fffbeb; border-radius: 10px; padding: 13px 15px; margin-bottom: 12px; }
+  .citem.done { border-color: #bbf7d0; background: #f0fdf4; }
+  .citem .q { font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.6; }
+  .orig { font-size: 12.5px; color: #4b5563; background: rgba(255,255,255,.65); border-radius: 8px; padding: 8px 10px; line-height: 1.7; margin-bottom: 9px; }
+  @media (max-width: 860px) {
+    .app { flex-direction: column; }
+    .side { width: 100%; border-right: none; border-bottom: 1px solid #e5e7eb; padding: 12px; }
+    .nav { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 4px; }
+    .nav button { white-space: nowrap; width: auto; }
+    .side .note { display: none; }
+    .main { padding: 16px 13px; }
+    .cards { grid-template-columns: 1fr 1fr; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">Yipiao Tongban<small>ONE SHIPMENT. ONE SPACE.</small></div>
+    <div class="nav" id="nav"></div>
+    <div class="note">New demo built around one forwarder operator processing a single shipment’s documents. Role switching is kept so one presenter can act out both sides. The invite code opens the confirmation page of a specific order; this is currently a local demo with no real cross-device collaboration.</div>
+  </aside>
+  <main class="main">
+    <div class="headbar">
+      <div>
+        <h1 id="hTitle">Forwarder Workstation</h1>
+        <div class="sub" id="hSub">Import documents, run a pre-check, let the client confirm only the disputed items, and generate a draft that can proceed.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="openJoin()">Join with invite code</button>
+        <button class="btn ghost" onclick="openNew()">+ New order</button>
+        <button class="btn ghost" onclick="loadCase(true)">Load sample case</button>
+      <a class="btn ghost" href="./index.html" style="text-decoration:none">中文版</a>
+      </div>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-size:13px"><span style="color:#6b7280">Current entry: </span><b id="roleName"></b><span style="color:#9ca3af"> (switching changes the viewpoint only; this order’s data is kept)</span></div>
+      <div class="roles" id="roles"></div>
+    </div>
+    <div id="page"></div>
+    <div class="panel">
+      <h3>Operation log & version history for this order</h3>
+      <div class="grid2">
+        <div><div class="muted" style="margin-bottom:6px"><b>Operation log</b></div><div class="log" id="logBox"></div></div>
+        <div><div class="muted" style="margin-bottom:6px"><b>Version history</b></div><div class="log" id="histBox"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const pad2 = n => String(n).padStart(2, "0");
+function nowStr() { const d = new Date(); return (d.getMonth() + 1) + "/" + d.getDate() + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+function toast(msg) { $("toastRoot").innerHTML = '<div class="toast">' + esc(msg) + "</div>"; setTimeout(() => { $("toastRoot").innerHTML = ""; }, 3400); }
+function closeModal() { $("modalRoot").innerHTML = ""; }
+
+/* ---------- minimal XLSX writer (stored zip, inline strings) ---------- */
+const CRC_TABLE = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes) { let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) {
+  const enc = new TextEncoder(); const chunks = []; const central = []; let offset = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name); const data = enc.encode(f.content); const crc = crc32(data);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true); local.setUint16(8, 0, true);
+    local.setUint32(14, crc, true); local.setUint32(18, data.length, true); local.setUint32(22, data.length, true); local.setUint16(26, name.length, true);
+    chunks.push(new Uint8Array(local.buffer), name, data);
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true); cen.setUint16(6, 20, true);
+    cen.setUint32(16, crc, true); cen.setUint32(20, data.length, true); cen.setUint32(24, data.length, true);
+    cen.setUint16(28, name.length, true); cen.setUint32(42, offset, true);
+    central.push(new Uint8Array(cen.buffer), name);
+    offset += 30 + name.length + data.length;
+  });
+  let cenSize = 0; central.forEach(c => cenSize += c.length);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cenSize, true); end.setUint32(16, offset, true);
+  chunks.push(...central, new Uint8Array(end.buffer));
+  return new Blob(chunks, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function colName(i) { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+function sheetXml(rows) {
+  const body = rows.map((r, ri) => "<row r=\'" + (ri + 1) + "\">" + r.map((c, ci) => {
+    if (c === null || c === undefined || c === "") return "";
+    if (typeof c === "number") return "<c r=\'" + colName(ci) + (ri + 1) + "\"><v>" + c + "</v></c>";
+    return "<c r=\'" + colName(ci) + (ri + 1) + "\" t=\"inlineStr\"><is><t xml:space=\"preserve\">" + esc(c) + "</t></is></c>";
+  }).join("") + "</row>").join("");
+  return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>" + body + "</sheetData></worksheet>";
+}
+function makeXlsx(sheetName, rows) {
+  return zipStore([
+    { name: "[Content_Types].xml", content: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>" },
+    { name: "_rels/.rels", content: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>" },
+    { name: "xl/workbook.xml", content: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\'" + esc(sheetName) + "\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>" },
+    { name: "xl/_rels/workbook.xml.rels", content: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/></Relationships>" },
+    { name: "xl/worksheets/sheet1.xml", content: sheetXml(rows) }
+  ]);
+}
+function downloadBlob(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+</script>
+<script>
+/* ================= state ================= */
+const PAGES = ["Overview", "Documents & Pre-check", "Client Confirmation", "Draft & Return", "Plan & Usage"];
+const ROLES = ["Forwarder", "Exporter"];
+const FIELDS = [
+  { key: "qty", label: "Quantity", key_field: true },
+  { key: "weight", label: "Gross weight", key_field: false },
+  { key: "addr", label: "Consignee address", key_field: true },
+  { key: "marks", label: "Shipping marks", key_field: false }
+];
+const ADDR_NEW = "No. 88 Lingang Avenue, Pudong New Area, Shanghai";
+const ADDR_OLD = "No. 8 Lingang Avenue, Pudong New Area, Shanghai";
+const LS_KEY = "yipiao-v2-en";
+
+function sampleDocs() {
+  return [
+    { id: "pl", name: "Packing List.pdf", src: "Uploaded by the exporter", fields: {
+      qty: { on: true, v: "100 cartons" }, weight: { on: true, v: "2,000 kg" }, addr: { on: false, v: "" }, marks: { on: true, v: "YP-SH-100" } } },
+    { id: "ci", name: "Commercial Invoice.pdf", src: "Uploaded by the exporter", fields: {
+      qty: { on: true, v: "100 cartons" }, weight: { on: false, v: "" }, addr: { on: true, v: ADDR_NEW }, marks: { on: false, v: "" } } },
+    { id: "si", name: "Shipping Instruction (draft, to be updated)", src: "Prepared by the forwarder from previous documents", fields: {
+      qty: { on: true, v: "120 cartons" }, weight: { on: true, v: "2,000 kg" }, addr: { on: true, v: ADDR_OLD }, marks: { on: true, v: "YP-SH-10?", uncertain: true } } }
+  ];
+}
+function caseOrder() {
+  return {
+    id: "YP-20261116-001", name: "Tables and chairs export · Antwerp-Shanghai", from: "Antwerp", to: "Shanghai",
+    cargo: "Tables and chairs", bookingNo: "OL-ANR-20261120-001", shipper: "Antwerp Trading BV",
+    consignee: "Nord Living (Shanghai)", deadline: "2026-11-19 18:00", invite: "YP16A2B8",
+    dataVersion: 2, docs: sampleDocs(), precheck: null, confirmations: {}, confirmRequested: false,
+    draft: null, submissions: [], amendments: [], returnDoc: null, returnCheck: null, completed: false,
+    msgs: [], log: [{ t: "11/16 09:12", text: "Forwarder created the order and imported 3 sample documents (packing list, commercial invoice, shipping instruction draft)" }],
+    history: [{ v: 2, t: "11/16 09:12", text: "Document version V2: the shipping instruction still carries the old address and old quantity, pending pre-check" }]
+  };
+}
+function blankOrder(id, f) {
+  return {
+    id: id, name: f.name, from: f.from, to: f.to, cargo: f.cargo, bookingNo: f.bookingNo || "To be added after booking",
+    shipper: f.shipper || "", consignee: f.consignee || "", deadline: f.deadline || "Not set", invite: "YP" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    dataVersion: 1, docs: [], precheck: null, confirmations: {}, confirmRequested: false,
+    draft: null, submissions: [], amendments: [], returnDoc: null, returnCheck: null, completed: false,
+    msgs: [], log: [{ t: nowStr(), text: "Forwarder created a new blank order (no documents imported)" }],
+    history: [{ v: 1, t: nowStr(), text: "Order created, no documents yet" }]
+  };
+}
+function freshState() {
+  const o = caseOrder();
+  return { page: "Overview", role: "Forwarder", cur: o.id, orders: [o], billed: [], plan: { price: 600, quota: 50 } };
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(LS_KEY)) || freshState(); } catch (e) { S = freshState(); }
+if (!S.orders || !S.orders.length) S = freshState();
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
+function O() { return S.orders.find(x => x.id === S.cur) || S.orders[0]; }
+function log(text) { O().log.unshift({ t: nowStr(), text: text }); }
+function hist(text) { O().history.unshift({ v: O().dataVersion, t: nowStr(), text: text }); }
+
+/* ================= precheck engine (data-driven) ================= */
+function runPrecheck(order) {
+  const rows = FIELDS.map(f => {
+    const parts = order.docs.map(d => ({ doc: d.name, f: d.fields[f.key] })).filter(x => x.f && x.f.on);
+    let status, detail;
+    if (parts.length < 2) { status = "na"; detail = parts.length === 1 ? "Only 1 document contains this field; not covered by cross-document check" : "No document contains this field"; }
+    else if (parts.some(x => x.f.uncertain)) { status = "unc"; detail = "A document value is uncertain; manual check against the source is required"; }
+    else {
+      const vals = [...new Set(parts.map(x => x.f.v))];
+      if (vals.length === 1) { status = "ok"; detail = "The documents covered agree"; }
+      else { status = "bad"; detail = "The documents covered disagree"; }
+    }
+    return { key: f.key, label: f.label, key_field: f.key_field, parts: parts, status: status, detail: detail };
+  });
+  return { version: order.dataVersion, at: nowStr(), rows: rows };
+}
+function diffs(order) {
+  if (!order.precheck || order.precheck.version !== order.dataVersion) return [];
+  return order.precheck.rows.filter(r => r.status === "bad");
+}
+function confirmValid(order, key) {
+  const c = order.confirmations[key];
+  return !!(c && c.status === "Valid" && c.dataVersion === order.dataVersion);
+}
+function pendingConfirmKeys(order) {
+  return diffs(order).filter(r => r.key_field && !confirmValid(order, r.key)).map(r => r.key);
+}
+function blockers(order) {
+  const b = [];
+  if (!order.docs.length) b.push({ text: "No documents imported yet; processing cannot start.", page: "Documents & Pre-check", act: "Import documents" });
+  else if (!order.precheck || order.precheck.version !== order.dataVersion) b.push({ text: "Current version V" + order.dataVersion + " has not been pre-checked yet.", page: "Documents & Pre-check", act: "Run pre-check" });
+  else {
+    diffs(order).forEach(r => {
+      if (r.key_field && !confirmValid(order, r.key)) b.push({ text: "Key difference unresolved: '" + r.label + "' differs across documents and has no valid confirmation bound to the current version.", page: "Client Confirmation", act: "Handle confirmation" });
+      else if (r.key_field && confirmValid(order, r.key)) b.push({ text: "'" + r.label + "' has been confirmed by the client, but the shipping instruction has not been updated from the confirmation yet.", page: "Documents & Pre-check", act: "Update documents" });
+      else b.push({ text: "'" + r.label + "' differs (non-key field); please note it in the draft.", page: "Documents & Pre-check", act: "View" });
+    });
+  }
+  if (b.length === 0) {
+    if (!order.draft || order.draft.version !== order.dataVersion) b.push({ text: "Documents are consistent; no draft has been generated for the current version yet.", page: "Draft & Return", act: "Generate draft" });
+    else if (!order.submissions.length) b.push({ text: "Draft generated; submission not recorded yet.", page: "Draft & Return", act: "Record submission" });
+    else if (!order.returnDoc) b.push({ text: "Submitted; waiting for the return document.", page: "Draft & Return", act: "Load return document" });
+    else if (order.returnCheck && !order.returnCheck.ok) b.push({ text: "The return document does not match the confirmed version; further handling is required.", page: "Draft & Return", act: "Check return document" });
+  }
+  return b;
+}
+function progressSteps(order) {
+  const hasDocs = order.docs.length > 0;
+  const checked = !!(order.precheck && order.precheck.version === order.dataVersion);
+  const noDiff = checked && diffs(order).filter(r => r.key_field).length === 0;
+  const confirmed = checked && diffs(order).length >= 0 && pendingConfirmKeys(order).length === 0 && diffs(order).some(r => r.key_field);
+  const drafted = !!(order.draft && order.draft.version === order.dataVersion);
+  const submitted = order.submissions.length > 0;
+  const returned = !!order.returnDoc;
+  const done = order.completed;
+  const raw = [
+    { label: "Import documents", done: hasDocs },
+    { label: "Run pre-check", done: checked },
+    { label: "Client Confirmation", done: noDiff || confirmed },
+    { label: "Generate draft", done: drafted },
+    { label: "Submit", done: submitted },
+    { label: "Return check", done: returned && order.returnCheck && order.returnCheck.ok },
+    { label: "Done", done: done }
+  ];
+  let curSet = false;
+  raw.forEach(s => { if (!s.done && !curSet) { s.now = true; curSet = true; } });
+  return raw;
+}
+function effectiveFields(order) {
+  const si = order.docs.find(d => d.id === "si");
+  const get = k => { const d = order.docs.find(x => x.fields[k] && x.fields[k].on); return d ? d.fields[k].v : ""; };
+  return {
+    qty: si ? si.fields.qty.v : get("qty"),
+    weight: get("weight"),
+    addr: si ? si.fields.addr.v : get("addr"),
+    marks: get("marks")
+  };
+}
+</script>
+<script>
+/* ================= actions ================= */
+function go(p) { S.page = p; save(); render(); window.scrollTo(0, 0); }
+function setRole(r) {
+  S.role = r;
+  if (r === "Exporter") S.page = "Client Confirmation";
+  if (r === "Forwarder" && S.page === "Client Confirmation") { /* forwarder may view the confirm page too */ }
+  log("Switched viewpoint to: " + r + " (data kept)"); save(); render();
+}
+function switchOrder(id) { S.cur = id; save(); render(); }
+function doPrecheck() {
+  const o = O();
+  o.precheck = runPrecheck(o);
+  log("Forwarder ran a pre-check on document version V" + o.dataVersion + ": " + o.precheck.rows.filter(r => r.status === "bad").length + " difference(s) found");
+  save(); render(); toast("Pre-check complete: results computed from the current document data");
+}
+function importSample() {
+  const o = O(); o.docs = sampleDocs(); o.dataVersion++; o.precheck = null;
+  hist("Imported the demo document pack (3 sample documents); document version raised to V" + o.dataVersion);
+  log("Forwarder imported the demo document pack (sample fields; not a claim of general file-recognition capability)");
+  save(); render(); toast("3 sample documents imported");
+}
+function editSiField(key, val) {
+  const o = O(); const si = o.docs.find(d => d.id === "si"); if (!si) return;
+  const old = si.fields[key].v;
+  if (old === val) return;
+  si.fields[key].v = val; si.fields[key].uncertain = false;
+  o.dataVersion++; o.precheck = null;
+  const c = o.confirmations[key];
+  if (c && c.status === "Valid" && c.value !== val) { c.status = "Invalidated"; log("Forwarder edited shipping instruction '" + FIELDS.find(f => f.key === key).label + "'; the previous client confirmation for this field is now invalid and must be re-confirmed"); }
+  if (o.submissions.length && !o.completed) { o.amendments.push({ t: nowStr(), text: "Post-submission edit of '" + FIELDS.find(f => f.key === key).label + "': " + old + " → " + val + " (original submission record kept; an amendment item was added)" }); log("Submitted documents were edited; an amendment item was added and the original submission record kept"); }
+  hist("Shipping instruction '" + FIELDS.find(f => f.key === key).label + "' changed from " + old + " to " + val + "; document version raised to V" + o.dataVersion);
+  log("Forwarder updated shipping instruction '" + FIELDS.find(f => f.key === key).label + "': " + old + " → " + val);
+  save(); render(); toast("Updated; document version raised to V" + o.dataVersion + "; please run the pre-check again");
+}
+function saveSi(btn) { const inp = btn.parentElement.querySelector("input"); editSiField(btn.dataset.k, inp.value.trim()); }
+function sendConfirmRequest() {
+  const o = O(); o.confirmRequested = true;
+  log("Forwarder sent a confirmation request to the exporter (invite code " + o.invite + "), items pending: " + pendingConfirmKeys(o).length + " item(s)");
+  save(); render(); toast("Confirmation request sent: the client opens this order’s confirmation page with the invite code");
+}
+function clientConfirm(key) {
+  const o = O();
+  let value = "", basis = "";
+  if (key === "qty") { value = ($("cf_qty") ? $("cf_qty").value.trim() : ""); basis = $("cf_qty_basis") ? $("cf_qty_basis").value.trim() : ""; if (!value) { toast("Please enter the final quantity first"); return; } value = value + " cartons"; }
+  if (key === "addr") { const r = document.querySelector("input[name=cf_addr]:checked"); if (!r) { toast("Please select the consignee address for this shipment first"); return; } value = r.value; basis = $("cf_addr_basis") ? $("cf_addr_basis").value.trim() : ""; }
+  o.confirmations[key] = { value: value, basis: basis || "(no basis provided)", by: "Exporter", at: nowStr(), dataVersion: o.dataVersion, status: "Valid" };
+  log("Exporter confirmed '" + FIELDS.find(f => f.key === key).label + "'= " + value + " (bound to document version V" + o.dataVersion + ")");
+  save(); render(); toast("Confirmed and bound to the current version; the forwarder sees the result on switching back");
+}
+function applyConfirmations() {
+  const o = O(); const si = o.docs.find(d => d.id === "si"); if (!si) return;
+  let changed = [];
+  ["qty", "addr"].forEach(k => {
+    const c = o.confirmations[k];
+    if (c && c.status === "Valid" && si.fields[k].v !== c.value) { si.fields[k].v = c.value; changed.push(FIELDS.find(f => f.key === k).label); }
+  });
+  if (!changed.length) { toast("No confirmation results to apply"); return; }
+  o.dataVersion++; o.precheck = null;
+  hist("Updated the shipping instruction from client confirmations (" + changed.join("、") + "); document version raised to V" + o.dataVersion);
+  log("Forwarder updated the shipping instruction from confirmations: " + changed.join("、"));
+  save(); render(); toast("Shipping instruction updated to V" + o.dataVersion + "; please run the pre-check again to verify consistency");
+}
+function genDraft() {
+  const o = O();
+  const ef = effectiveFields(o);
+  o.draft = { version: o.dataVersion, at: nowStr(), fields: ef };
+  if (!S.billed.includes(o.id)) S.billed.push(o.id);
+  log("Generated the shipping instruction draft (based on document version V" + o.dataVersion + "); this order now counts toward plan usage (re-checks and re-exports of the same order are not counted again)");
+  save(); render(); toast("Draft generated; Excel download is available");
+}
+function draftRows(o) {
+  const d = o.draft; const ef = d.fields;
+  const unc = o.precheck ? o.precheck.rows.filter(r => r.status === "unc").map(r => r.label + " has uncertain recognition; please verify against the source document") : [];
+  const na = o.precheck ? o.precheck.rows.filter(r => r.status === "na").map(r => r.label + " was not covered by the cross-document check") : [];
+  const hints = unc.concat(na);
+  return [
+    ["Shipping instruction draft (Demo)", ""],
+    ["Order No.", o.id], ["Booking No.", o.bookingNo],
+    ["Shipper", o.shipper], ["Consignee", o.consignee], ["Consignee address", ef.addr],
+    ["Origin", o.from], ["Destination", o.to],
+    ["Cargo name", o.cargo], ["Quantity", ef.qty], ["Gross weight", ef.weight], ["Shipping marks", ef.marks],
+    ["Document version", "V" + d.version], ["Generated at", d.at],
+    ["Review notes", hints.length ? hints.join("; ") : "None (key fields verified consistent across documents)"],
+    ["Note", "This draft was generated by Yipiao Tongban from the confirmed fields; it is a demo document, not an official carrier document。"]
+  ];
+}
+function exportDraft() {
+  const o = O(); if (!o.draft) return;
+  downloadBlob(makeXlsx("Shipping instruction draft", draftRows(o)), "Shipping instruction draft-" + o.id + "-V" + o.draft.version + ".xlsx");
+  log("Forwarder downloaded the shipping instruction draft as Excel (V" + o.draft.version + "; content matches the on-page fields)");
+  save(); render();
+}
+function recordSubmit() {
+  const o = O();
+  o.submissions.push({ t: nowStr(), version: o.draft.version, snapshot: Object.assign({}, o.draft.fields) });
+  o.returnDoc = null; o.returnCheck = null;
+  log("Forwarder recorded submission: draft V" + o.draft.version + " was submitted to the carrier through the usual channel; now waiting for the return document");
+  save(); render(); toast("Submission recorded; waiting for the return document");
+}
+function loadReturn(kind) {
+  const o = O(); const sub = o.submissions[o.submissions.length - 1]; if (!sub) return;
+  const snap = sub.snapshot;
+  if (kind === "old") o.returnDoc = { kind: "Simulated B/L draft (return)", at: nowStr(), fields: { qty: snap.qty, weight: snap.weight, addr: ADDR_OLD, marks: snap.marks } };
+  else o.returnDoc = { kind: "Corrected B/L draft (return)", at: nowStr(), fields: { qty: snap.qty, weight: snap.weight, addr: snap.addr, marks: snap.marks } };
+  const mism = [];
+  ["qty", "weight", "addr", "marks"].forEach(k => { if (o.returnDoc.fields[k] !== snap[k]) mism.push({ key: k, label: FIELDS.find(f => f.key === k).label, submitted: snap[k], returned: o.returnDoc.fields[k] }); });
+  o.returnCheck = { ok: mism.length === 0, mism: mism, at: nowStr() };
+  log("Loaded return document '" + o.returnDoc.kind + "' and checked it: " + (mism.length ? mism.length + " item(s) differ from the submitted version" : "matches the submitted version"));
+  if (o.returnCheck.ok && o.amendments.length === 0) { o.completed = true; log("Return check passed; this order’s document flow is complete (document preparation and verification only, not cargo transport or delivery)"); }
+  save(); render();
+}
+function postMsg() {
+  const inp = $("msgInput"); const v = inp.value.trim(); if (!v) return;
+  O().msgs.push({ role: S.role, t: nowStr(), text: v });
+  log(S.role + " posted a message (communication record only; not a business confirmation)");
+  save(); render();
+}
+function loadCase(manual) {
+  const exists = S.orders.find(x => x.id === "YP-20261116-001");
+  if (!exists) S.orders.unshift(caseOrder());
+  S.cur = "YP-20261116-001";
+  if (manual) log("Loaded the demo sample order");
+  save(); render(); if (manual) toast("Sample case loaded: Antwerp to Shanghai, 100 cartons of tables and chairs");
+}
+function resetAll() {
+  $("modalRoot").innerHTML = '<div class="modalwrap"><div class="modal"><h3>Reset demo data?</h3><p class="muted" style="margin-bottom:16px">This clears all orders and records stored in this browser and restores the initial sample case.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="doReset()">Confirm reset</button></div></div></div>';
+}
+function doReset() { localStorage.removeItem(LS_KEY); S = freshState(); save(); closeModal(); render(); toast("Reset to the initial sample case"); }
+function openNew() {
+  $("modalRoot").innerHTML = '<div class="modalwrap"><div class="modal"><h3>New order (blank)</h3>'
+    + '<div class="fld"><label>Order name</label><input type="text" id="nf_name" placeholder="e.g. Fabric export · Rotterdam-Shanghai"></div>'
+    + '<div class="grid2"><div class="fld"><label>Origin</label><input type="text" id="nf_from"></div><div class="fld"><label>Destination</label><input type="text" id="nf_to"></div></div>'
+    + '<div class="fld"><label>Cargo</label><input type="text" id="nf_cargo" placeholder="e.g. Fabrics"></div>'
+    + '<div class="grid2"><div class="fld"><label>Consignee</label><input type="text" id="nf_consignee"></div><div class="fld"><label>Document deadline</label><input type="text" id="nf_deadline" placeholder="e.g. 2026-11-25 18:00"></div></div>'
+    + '<p class="muted" style="margin-bottom:14px">A blank order does not inherit the sample case’s files; documents must be imported separately.</p>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="doNew()">Create order</button></div></div></div>';
+}
+function doNew() {
+  const name = $("nf_name").value.trim(); if (!name) { toast("Please enter an order name"); return; }
+  const id = "YP-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900);
+  const o = blankOrder(id, { name: name, from: $("nf_from").value.trim() || "—", to: $("nf_to").value.trim() || "—", cargo: $("nf_cargo").value.trim() || "—", consignee: $("nf_consignee").value.trim(), deadline: $("nf_deadline").value.trim() || "Not set", shipper: "", bookingNo: "" });
+  S.orders.push(o); S.cur = id; S.role = "Forwarder"; S.page = "Overview";
+  closeModal(); save(); render(); toast("New blank order created: " + id);
+}
+function openJoin() {
+  $("modalRoot").innerHTML = '<div class="modalwrap"><div class="modal"><h3>Join with invite code</h3>'
+    + '<div class="fld"><label>Enter the order invite code (8 characters)</label><input type="text" id="jf_code" placeholder="e.g. YP16A2B8" maxlength="8" style="text-transform:uppercase"></div>'
+    + '<p class="muted" style="margin-bottom:14px">Once validated, the order’s confirmation page opens in the Exporter entry. This is currently a local demo: the code is only valid in this browser and there is no real cross-device collaboration.</p>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="doJoin()">Open confirmation page</button></div></div></div>';
+}
+function doJoin() {
+  const code = $("jf_code").value.trim().toUpperCase();
+  const o = S.orders.find(x => x.invite === code);
+  if (!o) { toast("Invalid invite code: no matching order"); return; }
+  S.cur = o.id; S.role = "Exporter"; S.page = "Client Confirmation";
+  o.log.unshift({ t: nowStr(), text: "Exporter entered this order’s confirmation page with the invite code" });
+  closeModal(); save(); render(); toast("Opened the confirmation page of order " + o.id + "");
+}
+</script>
+<script>
+/* ================= pages ================= */
+function pageOverview(o) {
+  const bl = blockers(o);
+  const steps = progressSteps(o).map(s => '<div class="step' + (s.done ? " done" : s.now ? " now" : "") + '">' + (s.done ? "✓ " : "") + s.label + "</div>").join("");
+  let h = '<div class="panel"><h3>Document processing progress<span class="tag">"Completed" here means documents prepared and verified, not cargo transported or delivered</span></h3><div class="steps">' + steps + "</div></div>";
+  h += '<div class="panel"><h3>Blocking issues & next step</h3>';
+  if (o.completed) h += '<div class="okbox">This order’s document flow is complete: the return document matches the confirmed version, and the draft, submission and return records are all on file.</div>';
+  else if (bl.length) bl.forEach((b, i) => { h += '<div class="blocker">' + esc(b.text) + (i === 0 && S.role === "Forwarder" ? ' <button class="btn sm" style="margin-left:8px" data-p="' + b.page + '" onclick="go(this.dataset.p)">' + b.act + '</button>' : "") + "</div>"; });
+  else h += '<div class="okbox">No blocking issues at the moment.</div>';
+  if (S.role === "Forwarder") h += '<p class="muted">Invite code for this order: <b>' + o.invite + '</b> (the client uses it to open the confirmation page; local demo, no cross-device collaboration)</p>';
+  h += "</div>";
+  h += '<div class="panel"><h3>Order details</h3><div class="tblwrap"><table><tr><th style="width:110px">Order No.</th><td>' + o.id + '</td><th style="width:110px">Booking No.</th><td>' + esc(o.bookingNo) + '</td></tr>'
+    + '<tr><th>Route</th><td>' + esc(o.from) + " → " + esc(o.to) + '</td><th>Document deadline</th><td>' + esc(o.deadline) + '</td></tr>'
+    + '<tr><th>Shipper</th><td>' + esc(o.shipper || "—") + '</td><th>Consignee</th><td>' + esc(o.consignee || "—") + '</td></tr>'
+    + '<tr><th>Cargo</th><td>' + esc(o.cargo) + '</td><th>Current document version</th><td>V' + o.dataVersion + '</td></tr></table></div></div>';
+  h += '<div class="panel"><h3>Later extensions<span class="tag">Not part of phase-1 completion</span></h3><p class="muted">Carrier feedback is handled inside the submission & return module of Draft & Return. Buyer confirmation and local-logistics pickup arrangements are later extensions: phase 1 only judges whether document preparation and verification are complete, and does not require buyer or local-logistics participation.</p></div>';
+  h += '<div class="panel"><h3>Messages<span class="tag">Kept, but not a main showcase and never a substitute for business confirmation</span></h3>'
+    + (o.msgs.length ? o.msgs.map(m => '<div style="font-size:13px;padding:5px 0;border-bottom:1px dashed #eef0f3"><b>' + esc(m.role) + '</b> <span style="color:#9ca3af">' + m.t + "</span>: " + esc(m.text) + "</div>").join("") : '<p class="muted">No messages yet.</p>')
+    + '<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="msgInput" placeholder="Write a message (no business effect)"><button class="btn ghost" onclick="postMsg()">Send</button></div></div>';
+  return h;
+}
+function statusPill(st) {
+  return st === "bad" ? '<span class="pill bad">Inconsistent</span>' : st === "ok" ? '<span class="pill good">Consistent</span>' : st === "unc" ? '<span class="pill unc">Uncertain recognition</span>' : '<span class="pill na">Not covered</span>';
+}
+function pageDocs(o) {
+  let h = "";
+  if (!o.docs.length) {
+    h += '<div class="panel"><h3>Documents & Pre-check</h3><p class="muted" style="margin-bottom:12px">This order has no documents yet. A blank order does not inherit the sample case files; you can import the demo document pack to try the pre-check (sample fields; not a claim of general file-recognition capability).</p><button class="btn" onclick="importSample()">Import demo document pack (3 sample documents)</button></div>';
+    return h;
+  }
+  h += '<div class="panel"><h3>Files & extracted fields<span class="tag">Sample fields; not a claim of general file-recognition capability</span></h3>';
+  o.docs.forEach(d => {
+    h += '<div class="doc"><div class="dn">' + esc(d.name) + ' <span class="pill info">' + esc(d.src) + "</span></div>";
+    h += '<div class="tblwrap"><table><tr><th style="width:90px">Field</th><th>Extracted value</th><th style="width:130px">Note</th></tr>';
+    FIELDS.forEach(f => {
+      const fd = d.fields[f.key];
+      if (!fd.on) { h += "<tr><td>" + f.label + '</td><td style="color:#9ca3af">—</td><td><span class="pill na">Not covered</span></td></tr>'; return; }
+      let cell = esc(fd.v) + (fd.uncertain ? ' <span class="pill unc">Uncertain recognition</span>' : "");
+      if (d.id === "si" && S.role === "Forwarder" && (f.key === "qty" || f.key === "addr")) {
+        cell = '<span style="display:flex;gap:6px"><input type="text" value="' + esc(fd.v) + '"><button class="btn ghost sm" data-k="' + f.key + '" onclick="saveSi(this)">Save</button></span>';
+      }
+      h += "<tr><td>" + f.label + "</td><td>" + cell + "</td><td>" + (d.id === "si" ? "Forwarder may edit; saving creates a new version" : "Extracted from the document") + "</td></tr>";
+    });
+    h += "</table></div></div>";
+  });
+  h += '<p class="muted">The three documents are independent: each value comes from its own document, never from one shared hard-coded result. The forwarder can edit the shipping instruction’s quantity and address directly; any edit raises the document version and requires a new pre-check, and a bound client confirmation that no longer matches the new value becomes invalid automatically.</p></div>';
+  h += '<div class="panel"><h3>Pre-check results<span class="tag">Results follow the data</span></h3>';
+  if (S.role === "Forwarder") h += '<button class="btn" onclick="doPrecheck()">Run pre-check on current version V' + o.dataVersion + "</button>";
+  if (!o.precheck) h += '<p class="muted" style="margin-top:10px">Pre-check not run yet.</p>';
+  else if (o.precheck.version !== o.dataVersion) h += '<div class="warnbox" style="margin-top:10px">Documents have moved to V' + o.dataVersion + "; the results below are for V" + o.precheck.version + " and are outdated. Please run the pre-check again.</div>" + precheckTable(o);
+  else h += precheckTable(o);
+  h += "</div>";
+  const appl = ["qty", "addr"].filter(k => confirmValid(o, k) && o.docs.find(d => d.id === "si") && o.docs.find(d => d.id === "si").fields[k].v !== o.confirmations[k].value);
+  if (S.role === "Forwarder" && appl.length) h += '<div class="panel"><div class="okbox" style="margin-bottom:10px">Client has confirmed: ' + appl.map(k => FIELDS.find(f => f.key === k).label + " = " + esc(o.confirmations[k].value)).join("; ") + '. Apply them to the shipping instruction in one click to create a new document version.</div><button class="btn" onclick="applyConfirmations()">Update shipping instruction from confirmations</button></div>';
+  return h;
+}
+function precheckTable(o) {
+  const p = o.precheck;
+  let h = '<div class="tblwrap" style="margin-top:12px"><table><tr><th style="width:90px">Field</th><th>Values by document (source text)</th><th style="width:110px">Status</th><th style="width:200px">Note</th></tr>';
+  p.rows.forEach(r => {
+    const vals = r.parts.length ? r.parts.map(x => esc(x.doc.split(" ")[0]) + ": " + esc(x.f.v) + (x.f.uncertain ? " (Uncertain recognition)" : "")).join("<br>") : "—";
+    h += "<tr><td>" + r.label + (r.key_field ? ' <span class="pill info">Key</span>' : "") + "</td><td>" + vals + "</td><td>" + statusPill(r.status) + "</td><td>" + esc(r.detail) + "</td></tr>";
+  });
+  h += '</table></div><p class="muted" style="margin-top:8px">Pre-check run at ' + p.at + ' · based on document version V' + p.version + '. Consistent / Inconsistent / Not covered / Uncertain recognition are shown separately; uncovered items are not hidden behind a green pass.</p>';
+  return h;
+}
+function confirmItemHtml(o, key) {
+  const r = o.precheck.rows.find(x => x.key === key); if (!r) return "";
+  const c = o.confirmations[key];
+  const valid = confirmValid(o, key);
+  const orig = r.parts.map(x => esc(x.doc.split(" ")[0]) + ": " + esc(x.f.v)).join("; ");
+  let h = '<div class="citem' + (valid ? " done" : "") + '">';
+  if (key === "qty") h += '<div class="q">Quantity differs: ' + orig + '. Please confirm the final quantity and provide a basis.</div><div class="orig">Source text: ' + orig + '</div>';
+  else h += '<div class="q">Consignee address has changed: ' + orig + '. Please confirm whether the new address applies to this shipment’s documents.</div><div class="orig">Source text: ' + orig + '</div>';
+  if (valid) {
+    h += '<p style="font-size:13px">✅ Confirmed: <b>' + esc(c.value) + '</b> | Basis: ' + esc(c.basis) + '<br><span class="muted">Confirmed by: ' + c.by + " | Time: " + c.at + " | Bound to document version: V" + c.dataVersion + "</span></p>";
+  } else if (c && c.status === "Invalidated") {
+    h += '<div class="warnbox">The earlier confirmation is invalid (documents were edited or the version changed). Please confirm again.</div>';
+  }
+  if (S.role === "Exporter" && !valid) {
+    if (key === "qty") h += '<div class="fld"><label>Final quantity (cartons)</label><input type="number" id="cf_qty" min="1" placeholder="e.g. 100"></div><div class="fld"><label>Basis (describe it; attachment below)</label><input type="text" id="cf_qty_basis" placeholder="e.g. per packing list and invoice; warehouse release attached"></div>';
+    else h += '<div class="fld"><label>Select the address to use for this shipment</label><label style="display:block;font-size:13px;color:#1f2937;margin:6px 0"><input type="radio" name="cf_addr" value="' + ADDR_NEW + '"> New address (commercial invoice): ' + ADDR_NEW + '</label><label style="display:block;font-size:13px;color:#1f2937"><input type="radio" name="cf_addr" value="' + ADDR_OLD + '"> Old address (shipping instruction): ' + ADDR_OLD + '</label></div><div class="fld"><label>Basis</label><input type="text" id="cf_addr_basis" placeholder="e.g. consignee notified the change in writing"></div>';
+    h += '<div class="fld"><label>Attachment (optional; the demo records the file name only)</label><input type="file"></div><button class="btn" data-k="' + key + '" onclick="clientConfirm(this.dataset.k)">Confirm this item</button>';
+  }
+  if (S.role === "Forwarder") h += '<p class="muted">' + (valid ? "Confirmed by the client; see the record above." : "Waiting for the client. The forwarder cannot tick this off on the client’s behalf: the confirmation must be made by the client on this page and is bound to a version.") + "</p>";
+  h += "</div>";
+  return h;
+}
+function pageConfirm(o) {
+  let h = "";
+  if (!o.precheck || o.precheck.version !== o.dataVersion) {
+    h += '<div class="panel"><h3>Client Confirmation</h3><p class="muted">' + (o.docs.length ? "Document version V" + o.dataVersion + " has not been pre-checked yet, so there is nothing to confirm. The forwarder runs the pre-check under Documents & Pre-check first; differences then generate confirmation items automatically." : "This order has no documents yet.") + "</p></div>";
+    return h;
+  }
+  const keys = diffs(o).filter(r => r.key_field).map(r => r.key);
+  const pend = pendingConfirmKeys(o);
+  if (S.role === "Exporter") {
+    h += '<div class="panel"><h3>Items awaiting your confirmation</h3>';
+    if (!keys.length) h += '<div class="okbox">There is nothing for you to confirm on this order: key fields already agree across documents, or all differences have been confirmed.</div>';
+    else h += '<p style="font-size:14px;margin-bottom:12px">This shipment has <b>' + pend.length + ' item(s)</b> that need your confirmation. Once confirmed, the forwarder will generate a new document draft from them. You do not need the full workstation, only the disputed items below.</p>' + keys.map(k => confirmItemHtml(o, k)).join("");
+    h += "</div>";
+  } else {
+    h += '<div class="panel"><h3>Client confirmation (forwarder view)</h3>';
+    if (!keys.length) h += '<div class="okbox">The current version has no key differences; no client confirmation is needed.</div>';
+    else {
+      h += '<p class="muted" style="margin-bottom:10px">Confirmation items are generated automatically from pre-check differences. The forwarder organizes the questions and sends a confirmation request; the client confirms item by item in their own entry, and the results appear here directly, with no need to re-organize the client’s replies.</p>';
+      if (!o.confirmRequested) h += '<button class="btn" onclick="sendConfirmRequest()">Send confirmation request (invite code ' + o.invite + ')</button>';
+      else h += '<p class="muted" style="margin-bottom:10px">Confirmation request sent; waiting for the client (pending: ' + pend.length + " item(s)).</p>";
+      h += keys.map(k => confirmItemHtml(o, k)).join("");
+    }
+    h += "</div>";
+  }
+  return h;
+}
+</script>
+<script>
+function pageDraft(o) {
+  let h = '<div class="panel"><h3>Draft generation & download</h3>';
+  const bl = blockers(o);
+  const canDraft = o.docs.length && o.precheck && o.precheck.version === o.dataVersion && diffs(o).filter(r => r.key_field).length === 0;
+  if (!canDraft) h += '<div class="blocker">A draft cannot be generated yet: key differences are unresolved or the current version has not been pre-checked, so the order cannot enter a submittable state. Please clear the blocking issues under Documents & Pre-check and Client Confirmation first.</div>';
+  else if (S.role === "Forwarder") h += '<button class="btn" onclick="genDraft()">' + (o.draft && o.draft.version === o.dataVersion ? "Regenerate draft" : "Generate shipping instruction draft") + "</button>";
+  if (o.draft) {
+    h += '<div class="tblwrap" style="margin-top:12px"><table>' + draftRows(o).map(r => '<tr><th style="width:130px">' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>').join("") + '</table></div>';
+    h += '<p class="muted" style="margin-top:8px">Draft based on document version V' + o.draft.version + ", generated at " + o.draft.at + '. The download is an Excel file whose content matches the table above; after edits, regenerate and re-export to get the latest version.</p>';
+    if (S.role === "Forwarder") h += '<button class="btn" onclick="exportDraft()">Download draft (Excel)</button>';
+    if (o.draft.version !== o.dataVersion) h += '<div class="warnbox" style="margin-top:10px">Documents have moved to V' + o.dataVersion + "; this draft is outdated. Please regenerate before submitting.</div>";
+  }
+  h += "</div>";
+  h += '<div class="panel"><h3>Submission & return document<span class="tag">Carrier feedback lives in this module, shown with simulated return documents</span></h3>';
+  if (!o.submissions.length) {
+    h += '<p class="muted" style="margin-bottom:10px">No submission recorded yet. Submission itself goes through the forwarder’s usual channel; this page only records the fact and the version.</p>';
+    if (S.role === "Forwarder") h += '<button class="btn" ' + (o.draft && o.draft.version === o.dataVersion ? 'onclick="recordSubmit()"' : "disabled") + ">Record submission (submit current draft)</button>" + (o.draft && o.draft.version === o.dataVersion ? "" : '<p class="muted" style="margin-top:8px">A draft of the current version is required first.</p>');
+  } else {
+    const sub = o.submissions[o.submissions.length - 1];
+    h += '<div class="okbox">Submitted: ' + sub.t + " | Submitted version V" + sub.version + " | Quantity " + esc(sub.snapshot.qty) + " | Address: " + esc(sub.snapshot.addr) + "</div>";
+    if (o.amendments.length) h += o.amendments.map(a => '<div class="warnbox">' + a.t + ": " + esc(a.text) + "</div>").join("");
+    if (!o.returnDoc) {
+      h += '<p class="muted" style="margin-bottom:10px">Current status: <b>Waiting for the return document</b>. Submission is not completion; the return document must pass verification.</p>';
+      if (S.role === "Forwarder") h += '<button class="btn" onclick="loadReturn(\'old\')">Load simulated B/L draft (return)</button>';
+    } else {
+      h += '<div class="tblwrap"><table><tr><th style="width:110px">Return doc</th><td>' + esc(o.returnDoc.kind) + " | " + o.returnDoc.at + '</td></tr><tr><th>Return document address</th><td>' + esc(o.returnDoc.fields.addr) + '</td></tr><tr><th>Submitted address</th><td>' + esc(sub.snapshot.addr) + "</td></tr></table></div>";
+      if (o.returnCheck && !o.returnCheck.ok) {
+        h += '<div class="blocker" style="margin-top:10px">Return check failed: ' + o.returnCheck.mism.map(m => "'" + m.label + "' the return shows " + esc(m.returned) + ", which differs from the confirmed " + esc(m.submitted) + " Inconsistent").join("; ") + "; further handling is required.</div>";
+        if (S.role === "Forwarder") h += '<button class="btn" onclick="loadReturn(\'fixed\')">Load corrected return & verify</button>';
+      } else if (o.returnCheck && o.returnCheck.ok) {
+        h += '<div class="okbox" style="margin-top:10px">Return check passed: the return document matches the confirmed version.</div>';
+        if (o.completed) h += '<div class="okbox">✅ This order’s document flow is complete (document preparation and verification only, not cargo transport or delivery)。</div>';
+      }
+    }
+  }
+  h += "</div>";
+  return h;
+}
+function pagePlan(o) {
+  const used = S.billed.length;
+  const left = S.plan.quota - used;
+  let h = '<div class="panel"><h3>Enterprise plan & usage<span class="tag">Prices are a test assumption in the business plan, not a real quotation</span></h3>';
+  h += '<div class="cards" style="margin-bottom:6px"><div class="card"><div class="k">Test plan</div><div class="v">¥' + S.plan.price + ' / month</div><div class="d">Includes ' + S.plan.quota + ' shipments of document processing</div></div>'
+    + '<div class="card"><div class="k">Processed shipments</div><div class="v">' + used + ' shipments</div><div class="d">Counted once a draft is generated; re-checks of the same order are not counted again</div></div>'
+    + '<div class="card"><div class="k">Remaining quota</div><div class="v">' + left + ' shipments</div><div class="d">Simulated usage this month</div></div>'
+    + '<div class="card"><div class="k">Extra manual services</div><div class="v" style="font-size:14px">Quoted separately</div><div class="d">Manual review beyond the plan is quoted per case</div></div></div>';
+  h += '<p class="muted">Billing rule: an order counts as 1 shipment once its first draft is generated; re-checks, re-exports and return verification within the same order are not counted again. All orders and usage on this page are simulated.</p></div>';
+  h += '<div class="panel"><h3>Orders under this account (simulated)</h3><div class="tblwrap"><table><tr><th>Order No.</th><th>Name</th><th>Document version</th><th>Status</th><th></th></tr>'
+    + S.orders.map(x => "<tr><td>" + x.id + "</td><td>" + esc(x.name) + "</td><td>V" + x.dataVersion + "</td><td>" + (x.completed ? "Documents completed" : S.billed.includes(x.id) ? "Draft generated (counted)" : "In progress") + '</td><td><button class="btn ghost sm" data-id="' + x.id + '" onclick="switchOrder(this.dataset.id)">Open</button></td></tr>').join("")
+    + "</table></div></div>";
+  return h;
+}
+
+/* ================= render ================= */
+function render() {
+  const o = O();
+  if (S.role === "Exporter" && S.page !== "Client Confirmation") S.page = "Client Confirmation";
+  $("hTitle").textContent = S.role === "Forwarder" ? "Forwarder Workstation" : "Exporter Confirmation Page";
+  $("hSub").textContent = S.role === "Forwarder" ? "Import documents, run a pre-check, let the client confirm only the disputed items, and generate a draft that can proceed." : "You only confirm what is disputed. Each confirmation is bound to a specific version, and the forwarder generates the draft from it.";
+  $("nav").innerHTML = (S.role === "Exporter" ? ["Client Confirmation"] : PAGES).map(p => {
+    let badge = "";
+    if (p === "Client Confirmation") { const n = pendingConfirmKeys(o).length; if (n) badge = '<span class="badge">' + n + "</span>"; }
+    return '<button class="' + (S.page === p ? "on" : "") + '" data-p="' + p + '" onclick="go(this.dataset.p)">' + p + badge + "</button>";
+  }).join("");
+  const bl = blockers(o);
+  $("cards").innerHTML =
+    '<div class="card"><div class="k">Current order</div><div class="v" style="font-size:14px">' + esc(o.name) + '</div><div class="d">' + o.id + " · " + esc(o.from) + " → " + esc(o.to) + "</div></div>"
+    + '<div class="card"><div class="k">Document version</div><div class="v">V' + o.dataVersion + '</div><div class="d">' + (o.draft ? "Draft V" + o.draft.version + " generated" : "No draft yet") + "</div></div>"
+    + '<div class="card"><div class="k">Blocking issues</div><div class="v">' + (o.completed ? "Completed" : bl.length + " item(s)") + '</div><div class="d">' + (o.completed ? "Return check passed" : "Key differences unresolved; cannot submit") + "</div></div>"
+    + '<div class="card"><div class="k">Document deadline</div><div class="v" style="font-size:14px">' + esc(o.deadline) + '</div><div class="d">Booking No. ' + esc(o.bookingNo) + "</div></div>";
+  $("roleName").textContent = S.role + (S.role === "Forwarder" ? " (Senyu International Freight)" : " (Senyu Home · Exporter)");
+  $("roles").innerHTML = ROLES.map(r => '<button class="' + (S.role === r ? "on" : "") + '" data-r="' + r + '" onclick="setRole(this.dataset.r)">' + r + "</button>").join("") + '<button data-r="" onclick="resetAll()" style="border-color:#fca5a5;color:#b91c1c">Reset demo data</button>';
+  $("page").innerHTML = S.page === "Overview" ? pageOverview(o) : S.page === "Documents & Pre-check" ? pageDocs(o) : S.page === "Client Confirmation" ? pageConfirm(o) : S.page === "Draft & Return" ? pageDraft(o) : pagePlan(o);
+  $("logBox").innerHTML = o.log.length ? o.log.map(l => '<div><span class="t">' + l.t + "</span>" + esc(l.text) + "</div>").join("") : '<div class="muted">No records yet.</div>';
+  $("histBox").innerHTML = o.history.length ? o.history.map(x => '<div><span class="t">' + x.t + "</span>V" + x.v + ": " + esc(x.text) + "</div>").join("") : '<div class="muted">No records yet.</div>';
+}
+save(); render();
+</script>
+</body>
+</html>
